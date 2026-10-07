@@ -1,0 +1,44 @@
+# Deploy no Render: New + > Blueprint > aponte para este repositório.
+# Depois do deploy, abra o serviço 'taskai' > Environment e preencha GROQ_API_KEY (chave gratuita em console.groq.com/keys).
+# ATENÇÃO: o Postgres do plano Free do Render EXPIRA 30 dias após a criação (grace de 14 dias).
+# Para não perder o banco, faça upgrade dele no Render ou use um Postgres grátis permanente (Neon/Supabase):
+# nesse caso remova o bloco 'databases' e cole a URL em DATABASE_URL (Environment).
+databases:
+  - name: taskai-db
+    plan: free
+    databaseName: taskai
+    user: taskai
+
+services:
+  - type: web
+    name: taskai
+    runtime: python
+    plan: free
+    healthCheckPath: /healthz
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --workers 1 --threads 8 --timeout 120 --graceful-timeout 30 --keep-alive 5 --access-logfile -
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: taskai-db
+          property: connectionString
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: openai/gpt-oss-120b
+      - key: ESPECIAL_PRICE_MONTHLY
+        value: "35.80"
+      - key: ESPECIAL_ANNUAL_OLD
+        value: "390.50"
+      - key: ESPECIAL_ANNUAL_PRICE
+        value: "273.00"
+      - key: PRO_PRICE_MONTHLY
+        value: "48.90"
+      - key: PRO_ANNUAL_OLD
+        value: "586.00"
+      - key: PRO_ANNUAL_PRICE
+        value: "410.76"

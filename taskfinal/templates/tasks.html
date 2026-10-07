@@ -1,0 +1,360 @@
+{% extends "base.html" %}
+{% set active = "tasks" %}
+{% block title %}Minhas Tarefas — TaskAI{% endblock %}
+{% block content %}
+<div class="ph">
+  <h1>Minhas Tarefas</h1>
+  <p>Gerencie, filtre e organize todas as suas tarefas</p>
+</div>
+
+<div class="stats">
+  <div class="sc"><div class="sci bl"><i class="fa-solid fa-layer-group"></i></div>
+    <div><div class="scv" id="sT">—</div><div class="scl">Total de tarefas</div></div></div>
+  <div class="sc"><div class="sci am"><i class="fa-solid fa-clock"></i></div>
+    <div><div class="scv" id="sP">—</div><div class="scl">Pendentes</div></div></div>
+  <div class="sc"><div class="sci vi"><i class="fa-solid fa-spinner"></i></div>
+    <div><div class="scv" id="sE">—</div><div class="scl">Em andamento</div></div></div>
+  <div class="sc"><div class="sci gr"><i class="fa-solid fa-circle-check"></i></div>
+    <div><div class="scv" id="sD">—</div><div class="scl">Concluídas</div></div></div>
+</div>
+
+<div class="ttop">
+  <div class="tabs">
+    <button class="tb on" data-s="all"          onclick="setTab(this)">Todas</button>
+    <button class="tb"    data-s="pendente"      onclick="setTab(this)">Pendentes</button>
+    <button class="tb"    data-s="em_andamento"  onclick="setTab(this)">Em andamento</button>
+    <button class="tb"    data-s="concluido"     onclick="setTab(this)">Concluídas</button>
+  </div>
+  <div class="tools">
+    <div style="position:relative">
+      <button class="btn bg bsm" id="sortBtn" onclick="togSort()">
+        <i class="fa-solid fa-sort"></i> Ordenar
+      </button>
+      <div class="sdd" id="sortDd" style="display:none;min-width:220px;right:0;left:auto;top:calc(100% + 6px)">
+        <div class="sddi" onclick="setSort('newest','Mais recente')">
+          <i class="fa-solid fa-arrow-down-wide-short"></i>
+          <div><div class="sdn">Mais recente → Mais antiga</div></div>
+        </div>
+        <div class="sddi" onclick="setSort('oldest','Mais antiga')">
+          <i class="fa-solid fa-arrow-up-wide-short"></i>
+          <div><div class="sdn">Mais antiga → Mais recente</div></div>
+        </div>
+        <div class="sddi" onclick="setSort('priority_high','Prio. Alta→Baixa')">
+          <i class="fa-solid fa-fire" style="color:#ef4444"></i>
+          <div><div class="sdn">Prioridade Alta → Baixa</div></div>
+        </div>
+        <div class="sddi" onclick="setSort('priority_low','Prio. Baixa→Alta')">
+          <i class="fa-solid fa-leaf" style="color:#10b981"></i>
+          <div><div class="sdn">Prioridade Baixa → Alta</div></div>
+        </div>
+      </div>
+    </div>
+    {% if user.account_type == 'corporativo' %}
+    <a href="/equipe" class="btn bg bsm"><i class="fa-solid fa-users"></i> Equipe</a>
+    {% endif %}
+    <a href="/api/report/docx?scope=me" class="btn bg bsm" target="_blank" title="Gera um .docx com texto, mini planilha e gráfico das suas tarefas"><i class="fa-solid fa-file-word" aria-hidden="true"></i> Relatório</a>
+  </div>
+</div>
+
+<div class="twrap">
+  <div class="bbar" id="bbar">
+    <input type="checkbox" class="tcb" id="saTop" onchange="togAll(this.checked)">
+    <span class="binfo" id="binfo">0 selecionadas</span>
+    <button class="btn bdg bsm" onclick="confDel()">
+      <i class="fa-solid fa-trash"></i> Excluir selecionadas
+    </button>
+  </div>
+  <table>
+    <thead><tr>
+      <th class="thcb"><input type="checkbox" class="tcb" id="saHead" onchange="togAll(this.checked)"></th>
+      <th>Tarefa</th>
+      <th style="width:110px">Prioridade</th>
+      {% if user.account_type == 'corporativo' %}<th style="width:130px">Funcionário</th>{% endif %}
+      <th style="width:135px">Prazo</th>
+      <th style="width:145px">Status</th>
+      <th class="that">Ações</th>
+    </tr></thead>
+    <tbody id="tbody">
+      <tr><td colspan="7"><div class="empty"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando…</p></div></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Delete confirm modal -->
+<div class="ov" id="delMod">
+  <div class="modal">
+    <div class="mtitle"><i class="fa-solid fa-triangle-exclamation" style="color:var(--err);margin-right:8px"></i>Excluir tarefas</div>
+    <div class="mdesc" id="delDesc">Tem certeza? Esta ação não pode ser desfeita.</div>
+    <div class="mfoot">
+      <button class="btn bg" onclick="closeMod('delMod')">Cancelar</button>
+      <button class="btn bdg" onclick="doBulkDel()"><i class="fa-solid fa-trash"></i> Excluir</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit modal -->
+<div class="ov" id="editMod">
+  <div class="modal" style="max-width:490px">
+    <div class="mtitle"><i class="fa-solid fa-pen" style="color:var(--acc);margin-right:8px"></i>Editar Tarefa</div>
+    <input type="hidden" id="eId">
+    <div class="ff" style="margin-bottom:12px">
+      <label>Nome *</label>
+      <input type="text" id="eName" class="minp" style="margin-bottom:0" maxlength="200">
+    </div>
+    <div class="ff" style="margin-bottom:12px">
+      <label>Descrição</label>
+      <textarea id="eDesc" rows="3" class="minp" style="margin-bottom:0;resize:vertical"></textarea>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+      <div class="ff"><label>Prioridade</label>
+        <select id="ePrio" class="minp" style="margin-bottom:0">
+          <option value="alta">🔴 Alta</option>
+          <option value="media">🟡 Média</option>
+          <option value="baixa">🟢 Baixa</option>
+        </select>
+      </div>
+      <div class="ff"><label>Prazo</label>
+        <input type="date" id="eDl" class="minp" style="margin-bottom:0">
+      </div>
+    </div>
+    {% if user.account_type == 'corporativo' %}
+    <div class="ff" style="margin-bottom:12px">
+      <label>Funcionário</label>
+      <select id="eEmp" class="minp" style="margin-bottom:0">
+        <option value="">— Ninguém —</option>
+        {% for e in employees %}
+        <option value="{{ e.id }}">{{ e.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% endif %}
+    <div class="ff" style="margin-bottom:0">
+      <label>Status</label>
+      <select id="eSt" class="minp" style="margin-bottom:0">
+        <option value="pendente">Pendente</option>
+        <option value="em_andamento">Em andamento</option>
+        <option value="concluido">Concluído</option>
+      </select>
+    </div>
+    <div class="mfoot">
+      <button class="btn bg" onclick="closeMod('editMod')">Cancelar</button>
+      <button class="btn bp" onclick="saveEdit()"><i class="fa-solid fa-floppy-disk"></i> Salvar</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+/* ── FIX: usa tojson para evitar erro de sintaxe Jinja2 ── */
+const INIT_SEARCH = {{ initial_search|tojson }};
+const IS_CORP = {{ (user.account_type == 'corporativo')|tojson }};
+
+let curS='all', curO='newest', sel=new Set();
+
+(function boot(){
+  loadTasks();
+  if(INIT_SEARCH) document.querySelector('.ph p').textContent='Resultado para: "'+INIT_SEARCH+'"';
+  document.addEventListener('click',e=>{
+    if(!e.target.closest('#sortBtn')&&!e.target.closest('#sortDd'))
+      document.getElementById('sortDd').style.display='none';
+  });
+  document.querySelectorAll('.ov').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('on');}));
+})();
+
+function setTab(btn){
+  document.querySelectorAll('.tb').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on'); curS=btn.dataset.s; sel.clear(); loadTasks();
+}
+function togSort(){const d=document.getElementById('sortDd');d.style.display=d.style.display==='block'?'none':'block';}
+function setSort(v,lbl){
+  curO=v; document.getElementById('sortDd').style.display='none';
+  document.getElementById('sortBtn').innerHTML=`<i class="fa-solid fa-sort"></i> ${lbl}`;
+  loadTasks();
+}
+
+async function loadTasks(){
+  let url=`/api/tasks?status=${curS}&sort=${curO}`;
+  if(INIT_SEARCH&&curS==='all')url+=`&search=${encodeURIComponent(INIT_SEARCH)}`;
+  const d=await api('GET',url);
+  updStats(d.stats); renderRows(d.tasks);
+}
+
+function updStats(s){
+  document.getElementById('sT').textContent=s.total;
+  document.getElementById('sP').textContent=s.pendente;
+  document.getElementById('sE').textContent=s.em_andamento;
+  document.getElementById('sD').textContent=s.concluido;
+}
+
+function renderRows(tasks){
+  const tb=document.getElementById('tbody');
+  const cols = IS_CORP ? 7 : 6;
+  if(!tasks.length){tb.innerHTML=`<tr><td colspan="${cols}"><div class="empty"><i class="fa-solid fa-inbox"></i><p>Nenhuma tarefa encontrada.</p></div></td></tr>`;return;}
+  tb.innerHTML=tasks.map(t=>rowH(t)).join('');
+  sel.forEach(id=>{const cb=document.querySelector(`.tcb[data-id="${id}"]`);if(cb){cb.checked=true;cb.closest('tr').classList.add('sel');}});
+  updBbar();
+}
+
+function rowH(t){
+  const dl=t.deadline_fmt||'—';
+  const empCell = IS_CORP ? `<td><span style="font-size:12px;color:var(--t2)">${t.employee_name?('<i class=\"fa-solid fa-user\" style=\"margin-right:4px;font-size:10px\"></i>'+X(t.employee_name)):'—'}</span></td>` : '';
+  return `<tr class="tr" id="row-${t.id}" data-id="${t.id}">
+  <td class="cbc"><input type="checkbox" class="tcb" data-id="${t.id}" onchange="onCb(this)"></td>
+  <td>
+    <div class="tname" id="tn-${t.id}" ondblclick="startNEdit(${t.id})" title="Duplo clique para editar">${X(t.name)}</div>
+    ${t.description?`<div class="tdesc">${X(t.description.slice(0,60))}${t.description.length>60?'…':''}</div>`:''}
+  </td>
+  <td>
+    <select class="psel" onchange="updF(${t.id},'priority',this.value)">
+      <option value="alta"  ${t.priority==='alta' ?'selected':''}>🔴 Alta</option>
+      <option value="media" ${t.priority==='media'?'selected':''}>🟡 Média</option>
+      <option value="baixa" ${t.priority==='baixa'?'selected':''}>🟢 Baixa</option>
+    </select>
+  </td>
+  ${empCell}
+  <td>
+    <span class="dltext" id="dl-${t.id}" data-v="${t.deadline||''}" ondblclick="startDlEdit(${t.id})" title="Duplo clique para editar">
+      <i class="fa-regular fa-calendar" style="margin-right:5px;font-size:11px"></i>${dl}
+    </span>
+  </td>
+  <td>
+    <select class="ssel ${t.status}" onchange="chgSt(${t.id},this)">
+      <option value="pendente"     ${t.status==='pendente'    ?'selected':''}>Pendente</option>
+      <option value="em_andamento" ${t.status==='em_andamento'?'selected':''}>Em andamento</option>
+      <option value="concluido"    ${t.status==='concluido'   ?'selected':''}>Concluído</option>
+    </select>
+  </td>
+  <td>
+    <div class="rats">
+      <button class="bico" onclick="openEdit(${t.id})" title="Editar" aria-label="Editar tarefa ${X(t.name).replace(/"/g,'&quot;')}"><i class="fa-solid fa-pen" aria-hidden="true"></i></button>
+      <button class="bico del" onclick="delOne(${t.id})" title="Excluir" aria-label="Excluir tarefa ${X(t.name).replace(/"/g,'&quot;')}"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
+    </div>
+  </td>
+</tr>`;
+}
+
+/* inline name edit */
+function startNEdit(id){
+  const cell=document.getElementById('tn-'+id);
+  const old=cell.textContent.trim();
+  cell.innerHTML=`<input class="tnedit" value="${X(old)}" id="ne-${id}"
+    onblur="saveNEdit(${id})" onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){loadTasks();}">`;
+  document.getElementById('ne-'+id).focus();
+}
+async function saveNEdit(id){
+  const inp=document.getElementById('ne-'+id);if(!inp)return;
+  const v=inp.value.trim();if(!v){loadTasks();return;}
+  const d=await api('PUT',`/api/tasks/${id}`,{name:v});
+  if(d.success){document.getElementById('tn-'+id).textContent=v;document.getElementById('tn-'+id).ondblclick=()=>startNEdit(id);toast('Nome atualizado','ok');}
+  else{toast(d.error||'Erro','err');loadTasks();}
+}
+
+/* inline deadline edit */
+function startDlEdit(id){
+  const span=document.getElementById('dl-'+id);
+  const val=span.dataset.v||'';
+  const inp=document.createElement('input');
+  inp.type='date';inp.className='dledit';inp.value=val;
+  inp.onblur=()=>saveDlEdit(id,inp.value);
+  inp.onkeydown=e=>{if(e.key==='Enter')inp.blur();if(e.key==='Escape')loadTasks();};
+  span.replaceWith(inp);inp.focus();
+}
+async function saveDlEdit(id,val){
+  await api('PUT',`/api/tasks/${id}`,{deadline:val||null});
+  toast('Prazo atualizado','ok');loadTasks();
+}
+
+async function chgSt(id,sel){
+  sel.className='ssel '+sel.value;
+  const d=await api('PUT',`/api/tasks/${id}`,{status:sel.value});
+  if(d.success){toast('Status atualizado','ok');loadTasks();loadWidget();}
+  else{toast(d.error||'Erro','err');loadTasks();}
+}
+
+async function updF(id,field,val){
+  const d=await api('PUT',`/api/tasks/${id}`,{[field]:val});
+  if(d.success)toast('Atualizado','ok');else toast(d.error||'Erro','err');
+  loadTasks();
+}
+
+async function delOne(id){
+  if(!confirm('Excluir esta tarefa?'))return;
+  const d=await api('DELETE',`/api/tasks/${id}`);
+  if(d.success){toast('Tarefa excluída','ok');sel.delete(id);loadTasks();loadWidget();}
+  else toast(d.error||'Erro','err');
+}
+
+/* checkboxes */
+function onCb(cb){
+  const id=parseInt(cb.dataset.id);const row=document.getElementById('row-'+id);
+  if(cb.checked){sel.add(id);row.classList.add('sel');}else{sel.delete(id);row.classList.remove('sel');}
+  updBbar();
+}
+function togAll(checked){
+  document.querySelectorAll('.tcb[data-id]').forEach(cb=>{
+    cb.checked=checked;const id=parseInt(cb.dataset.id);const row=document.getElementById('row-'+id);
+    if(checked){sel.add(id);row?.classList.add('sel');}else{sel.delete(id);row?.classList.remove('sel');}
+  });
+  document.getElementById('saHead').checked=checked;
+  document.getElementById('saTop').checked=checked;
+  updBbar();
+}
+function updBbar(){
+  const n=sel.size;
+  document.getElementById('binfo').textContent=`${n} tarefa${n!==1?'s':''} selecionada${n!==1?'s':''}`;
+  document.getElementById('bbar').classList.toggle('on',n>0);
+  const all=document.querySelectorAll('.tcb[data-id]');
+  document.getElementById('saHead').checked=n>0&&n===all.length;
+}
+
+function confDel(){
+  if(!sel.size)return;
+  const n=sel.size;
+  document.getElementById('delDesc').textContent=`Tem certeza que deseja excluir ${n} tarefa${n!==1?'s':''}? Esta ação não pode ser desfeita.`;
+  document.getElementById('delMod').classList.add('on');
+}
+async function doBulkDel(){
+  const ids=[...sel];
+  const d=await api('POST','/api/tasks/bulk-delete',{ids});
+  closeMod('delMod');
+  if(d.success){toast(`${ids.length} tarefa${ids.length!==1?'s':''} excluída${ids.length!==1?'s':''}!`,'ok');sel.clear();loadTasks();loadWidget();}
+  else toast(d.error||'Erro','err');
+}
+
+/* edit modal */
+async function openEdit(id){
+  const d=await api('GET',`/api/tasks?status=all`);
+  const t=d.tasks.find(x=>x.id===id);
+  if(!t){toast('Tarefa não encontrada','err');return;}
+  document.getElementById('eId').value=t.id;
+  document.getElementById('eName').value=t.name;
+  document.getElementById('eDesc').value=t.description||'';
+  document.getElementById('ePrio').value=t.priority;
+  document.getElementById('eDl').value=t.deadline||'';
+  document.getElementById('eSt').value=t.status;
+  const empEl=document.getElementById('eEmp');
+  if(empEl)empEl.value=t.employee_id||'';
+  document.getElementById('editMod').classList.add('on');
+}
+async function saveEdit(){
+  const id=parseInt(document.getElementById('eId').value);
+  const empEl=document.getElementById('eEmp');
+  const body={
+    name:document.getElementById('eName').value.trim(),
+    description:document.getElementById('eDesc').value.trim(),
+    priority:document.getElementById('ePrio').value,
+    deadline:document.getElementById('eDl').value||null,
+    status:document.getElementById('eSt').value,
+  };
+  if(empEl)body.employee_id = empEl.value || null;
+  if(!body.name){toast('Nome é obrigatório','err');return;}
+  const d=await api('PUT',`/api/tasks/${id}`,body);
+  closeMod('editMod');
+  if(d.success){toast('Tarefa atualizada!','ok');loadTasks();loadWidget();}
+  else toast(d.error||'Erro','err');
+}
+
+function closeMod(id){document.getElementById(id).classList.remove('on');}
+</script>
+{% endblock %}

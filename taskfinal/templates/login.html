@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TaskAI — Entrar</title>
+<script>
+(function(){
+  var t = localStorage.getItem('taskai-theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', t);
+})();
+</script>
+<link rel="stylesheet" href="/static/css/style.css">
+<link rel="stylesheet" href="/static/css/accessibility.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="/static/js/accessibility.js" defer></script>
+<script src="/static/js/pw-eye.js" defer></script>
+</head>
+<body class="lp">
+<a href="#mainContent" class="skip-link">Pular para o conteúdo principal</a>
+<button class="thtog" onclick="toggleTheme()" style="position:fixed;top:20px;right:20px" aria-label="Alternar tema claro/escuro" title="Alternar tema">
+  <span class="thk" id="thk"><i class="fa-solid fa-moon" id="thicon" aria-hidden="true"></i></span>
+</button>
+<div class="lc" id="mainContent">
+  <div class="ll">
+    <div class="lb"><i class="fa-solid fa-check-double" style="color:#fff;font-size:16px"></i></div>
+    TaskAI
+  </div>
+  <div class="lh">
+    <h2 id="fTitle">Bem-vindo de volta</h2>
+    <p  id="fSub">Entre na sua conta para continuar</p>
+  </div>
+
+  <div class="at">
+    <button class="at-btn on" id="tLogin"  onclick="sw('login')">Entrar</button>
+    <button class="at-btn"    id="tReg"    onclick="sw('reg')">Criar conta</button>
+  </div>
+
+  <!-- LOGIN -->
+  <div class="fs on" id="sLogin">
+    <div class="fg"><label for="lEmail">Email</label>
+      <div class="iw"><i class="fa-solid fa-envelope" aria-hidden="true"></i>
+        <input type="email" id="lEmail" placeholder="seu@email.com" autocomplete="email">
+      </div>
+    </div>
+    <div class="fg"><label for="lPass">Senha</label>
+      <div class="iw"><i class="fa-solid fa-lock" aria-hidden="true"></i>
+        <input type="password" id="lPass" placeholder="••••••••" autocomplete="current-password">
+      </div>
+    </div>
+    <div class="em" id="lErr"></div>
+    <button class="btn bp bfull" onclick="doLogin(this)">
+      <span>Entrar</span><i class="fa-solid fa-arrow-right"></i>
+    </button>
+  </div>
+
+  <!-- REGISTER -->
+  <div class="fs" id="sReg">
+    <div class="fg" style="margin-bottom:16px">
+      <label id="accTypeLbl">Tipo de conta</label>
+      <div class="acctype" role="radiogroup" aria-labelledby="accTypeLbl">
+        <div class="acard sel" id="accComum" role="radio" aria-checked="true" tabindex="0"
+             onclick="setAcc('comum')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setAcc('comum')}">
+          <i class="fa-solid fa-user" aria-hidden="true"></i>
+          <div class="an">Pessoal</div>
+          <div class="ad">Uso individual, plano gratuito</div>
+        </div>
+        <div class="acard" id="accCorp" role="radio" aria-checked="false" tabindex="0"
+             onclick="setAcc('corporativo')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setAcc('corporativo')}">
+          <i class="fa-solid fa-building" aria-hidden="true"></i>
+          <div class="an">Empresarial</div>
+          <div class="ad">Gerencie sua equipe e relatórios</div>
+        </div>
+      </div>
+    </div>
+    <div class="fg"><label for="rName">Nome de usuário</label>
+      <div class="iw"><i class="fa-solid fa-user" aria-hidden="true"></i>
+        <input type="text" id="rName" placeholder="Seu nome" autocomplete="name">
+      </div>
+    </div>
+    <div class="fg"><label for="rEmail">Email</label>
+      <div class="iw"><i class="fa-solid fa-envelope" aria-hidden="true"></i>
+        <input type="email" id="rEmail" placeholder="seu@email.com" autocomplete="email">
+      </div>
+    </div>
+    <div class="fg">
+      <label for="rPass">Senha <span style="color:var(--t3);text-transform:none;font-weight:400;letter-spacing:0">(mín. 6 caracteres)</span></label>
+      <div class="iw"><i class="fa-solid fa-lock" aria-hidden="true"></i>
+        <input type="password" id="rPass" placeholder="••••••••" autocomplete="new-password">
+      </div>
+    </div>
+    <div class="em" id="rErr"></div>
+    <button class="btn bp bfull" onclick="doReg(this)">
+      <span>Criar conta</span><i class="fa-solid fa-user-plus"></i>
+    </button>
+  </div>
+</div>
+
+<script>
+function applyThemeIcon(t){document.getElementById('thicon').className = t==='light' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';}
+applyThemeIcon(document.documentElement.getAttribute('data-theme')||'dark');
+function toggleTheme(){
+  const cur=document.documentElement.getAttribute('data-theme')||'dark';
+  const next=cur==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',next);
+  localStorage.setItem('taskai-theme',next);
+  applyThemeIcon(next);
+}
+
+let accType='comum';
+function setAcc(t){
+  accType=t;
+  document.getElementById('accComum').classList.toggle('sel',t==='comum');
+  document.getElementById('accCorp').classList.toggle('sel',t==='corporativo');
+  document.getElementById('accComum').setAttribute('aria-checked', String(t==='comum'));
+  document.getElementById('accCorp').setAttribute('aria-checked', String(t==='corporativo'));
+}
+
+function sw(t){
+  const isL=t==='login';
+  document.getElementById('sLogin').classList.toggle('on',isL);
+  document.getElementById('sReg').classList.toggle('on',!isL);
+  document.getElementById('tLogin').classList.toggle('on',isL);
+  document.getElementById('tReg').classList.toggle('on',!isL);
+  document.getElementById('fTitle').textContent=isL?'Bem-vindo de volta':'Criar sua conta';
+  document.getElementById('fSub').textContent=isL?'Entre na sua conta para continuar':'Preencha os dados para se cadastrar';
+  document.getElementById('lErr').style.display='none';
+  document.getElementById('rErr').style.display='none';
+}
+function showErr(id,msg){const e=document.getElementById(id);e.textContent=msg;e.style.display='block';}
+async function doLogin(btn){
+  const e=document.getElementById('lErr'); e.style.display='none';
+  const email=document.getElementById('lEmail').value.trim();
+  const pass=document.getElementById('lPass').value;
+  if(!email||!pass)return showErr('lErr','Preencha todos os campos.');
+  btn.disabled=true; btn.innerHTML='<span class="spin"></span> Entrando…';
+  try{
+    const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password:pass})});
+    const d=await r.json();
+    if(d.success){window.location.href=d.redirect;}
+    else{showErr('lErr',d.error);btn.disabled=false;btn.innerHTML='<span>Entrar</span><i class="fa-solid fa-arrow-right"></i>';}
+  }catch{showErr('lErr','Erro de conexão.');btn.disabled=false;btn.innerHTML='<span>Entrar</span><i class="fa-solid fa-arrow-right"></i>';}
+}
+async function doReg(btn){
+  const e=document.getElementById('rErr'); e.style.display='none';
+  const name=document.getElementById('rName').value.trim();
+  const email=document.getElementById('rEmail').value.trim();
+  const pass=document.getElementById('rPass').value;
+  if(!name||!email||!pass)return showErr('rErr','Preencha todos os campos.');
+  btn.disabled=true; btn.innerHTML='<span class="spin"></span> Criando…';
+  try{
+    const r=await fetch('/api/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:name,email,password:pass,account_type:accType})});
+    const d=await r.json();
+    if(d.success){window.location.href=d.redirect;}
+    else{showErr('rErr',d.error);btn.disabled=false;btn.innerHTML='<span>Criar conta</span><i class="fa-solid fa-user-plus"></i>';}
+  }catch{showErr('rErr','Erro de conexão.');btn.disabled=false;btn.innerHTML='<span>Criar conta</span><i class="fa-solid fa-user-plus"></i>';}
+}
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Enter')return;
+  if(document.activeElement && document.activeElement.tagName==='BUTTON')return;
+  if(document.getElementById('sLogin').classList.contains('on'))document.querySelector('#sLogin .btn').click();
+  else document.querySelector('#sReg .btn').click();
+});
+</script>
+</body>
+</html>

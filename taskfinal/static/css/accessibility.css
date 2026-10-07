@@ -1,0 +1,128 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   ACESSIBILIDADE — TaskAI
+   Alto contraste · tamanho de fonte · redução de movimento · leitura em voz
+   alta · Libras (VLibras) · foco visível para navegação por teclado.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Pular para o conteúdo (leitores de tela / teclado) ── */
+.skip-link{
+  position:fixed;top:-60px;left:10px;z-index:99999;
+  background:var(--acc,#2563eb);color:#fff;padding:10px 16px;border-radius:8px;
+  font-size:13px;font-weight:700;transition:top .15s ease;
+}
+.skip-link:focus{top:10px}
+
+/* ── Foco visível (todo o site, não só o painel) ── */
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,
+textarea:focus-visible,[tabindex]:focus-visible{
+  outline:3px solid #2563eb !important;
+  outline-offset:2px !important;
+  border-radius:4px;
+}
+[data-a11y-contrast="on"] a:focus-visible,[data-a11y-contrast="on"] button:focus-visible,
+[data-a11y-contrast="on"] input:focus-visible,[data-a11y-contrast="on"] select:focus-visible,
+[data-a11y-contrast="on"] textarea:focus-visible,[data-a11y-contrast="on"] [tabindex]:focus-visible{
+  outline:3px solid #ffd500 !important;
+}
+
+/* ── Alto contraste (pessoas com baixa visão) ── */
+[data-a11y-contrast="on"]{
+  --bg:#000000 !important; --sb:#000000 !important; --card:#000000 !important; --card2:#0a0a0a !important;
+  --inp:#000000 !important; --hov:#1a1a1a !important;
+  --acc:#ffd500 !important; --acc-h:#ffe14d !important;
+  --acc-dim:rgba(255,213,0,.20) !important; --acc-br:#ffd500 !important;
+  --t1:#ffffff !important; --t2:#ffffff !important; --t3:#e8e8e8 !important;
+  --br:#ffffff !important; --br2:#ffffff !important;
+  --ok:#00ff6a !important; --warn:#ffd500 !important; --err:#ff5c5c !important;
+}
+[data-a11y-contrast="on"] .card,[data-a11y-contrast="on"] .lc,[data-a11y-contrast="on"] .ccard,
+[data-a11y-contrast="on"] .plan,[data-a11y-contrast="on"] .modal,[data-a11y-contrast="on"] .empcard,
+[data-a11y-contrast="on"] .tc{border-width:2px !important}
+[data-a11y-contrast="on"] .bp{color:#000 !important;font-weight:800}
+[data-a11y-contrast="on"] img{filter:contrast(1.05)}
+
+/* ── Tamanho de fonte (baixa visão) — zoom é suportado nos navegadores atuais ── */
+body.a11y-fs-1{zoom:1.12}
+body.a11y-fs-2{zoom:1.25}
+body.a11y-fs-3{zoom:1.45}
+
+/* ── Sublinhar links (facilita reconhecimento sem depender só de cor) ── */
+body.a11y-underline a{text-decoration:underline !important}
+
+/* ── Reduzir animações (sensibilidade a movimento) ── */
+body.a11y-reduce-motion *,
+body.a11y-reduce-motion *::before,
+body.a11y-reduce-motion *::after{
+  animation-duration:.001s !important;animation-iteration-count:1 !important;
+  transition-duration:.001s !important;scroll-behavior:auto !important;
+}
+
+/* ── Botão flutuante de acessibilidade (arrastável) ── */
+#a11yBtn{
+  position:fixed;left:18px;bottom:18px;z-index:9990;
+  width:52px;height:52px;border-radius:50%;
+  background:var(--acc,#2563eb);color:#fff;box-shadow:0 6px 20px rgba(0,0,0,.35);
+  display:flex;align-items:center;justify-content:center;font-size:22px;
+  border:2px solid rgba(255,255,255,.25);transition:transform .15s ease,background .2s;
+  cursor:grab;touch-action:none;user-select:none;
+}
+#a11yBtn:hover{background:var(--acc-h,#1d4ed8);transform:scale(1.06)}
+#a11yBtn.a11y-dragging{cursor:grabbing;transition:none;transform:scale(1.08);box-shadow:0 10px 28px rgba(0,0,0,.5)}
+body.a11y-no-select{user-select:none;-webkit-user-select:none}
+#a11yPanel{
+  position:fixed;left:18px;bottom:80px;z-index:9991;width:300px;max-width:calc(100vw - 36px);
+  max-height:min(560px,calc(100vh - 110px));overflow-y:auto;
+  background:var(--card,#0f1e30);border:1px solid var(--br2,rgba(255,255,255,.11));
+  border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.45);padding:16px;display:none;
+}
+#a11yPanel.on{display:block}
+#a11yPanel h2{font-size:14px;font-weight:800;margin-bottom:2px;color:var(--t1)}
+#a11yPanel .a11y-sub{font-size:11px;color:var(--t3,#8aa);margin-bottom:14px}
+.a11y-row{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:10px 0;border-top:1px solid var(--br,rgba(255,255,255,.06));
+}
+.a11y-row:first-of-type{border-top:none}
+.a11y-row .a11y-label{font-size:12.5px;font-weight:600;color:var(--t1)}
+.a11y-row .a11y-desc{font-size:10.5px;color:var(--t3,#8aa);margin-top:1px}
+.a11y-fsbtns{display:flex;gap:4px}
+.a11y-fsbtns button{
+  width:28px;height:28px;border-radius:6px;background:var(--inp,#0c1828);
+  border:1px solid var(--br,rgba(255,255,255,.08));color:var(--t1);font-weight:700;font-size:11px;
+}
+.a11y-fsbtns button.on{background:var(--acc,#2563eb);color:#fff;border-color:var(--acc,#2563eb)}
+.a11y-switch{
+  width:40px;height:22px;border-radius:22px;background:var(--inp,#0c1828);
+  border:1px solid var(--br2,rgba(255,255,255,.11));position:relative;flex-shrink:0;transition:background .2s;
+}
+.a11y-switch .knob{
+  position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;
+  background:var(--t3,#8aa);transition:left .18s ease,background .18s;
+}
+.a11y-switch[aria-checked="true"]{background:var(--acc,#2563eb)}
+.a11y-switch[aria-checked="true"] .knob{left:20px;background:#fff}
+.a11y-readbtn{
+  width:100%;display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:9px 10px;border-radius:8px;background:var(--acc,#2563eb);color:#fff;
+  font-size:12.5px;font-weight:700;margin-top:12px;
+}
+.a11y-readbtn.reading{background:var(--err,#ef4444)}
+.a11y-resetbtn{
+  width:100%;padding:8px 10px;border-radius:8px;background:var(--card2,#132035);
+  border:1px solid var(--br2,rgba(255,255,255,.11));color:var(--t2,#8aa);font-size:12px;font-weight:600;
+  margin-top:8px;
+}
+.a11y-close{
+  position:absolute;top:10px;right:10px;width:26px;height:26px;border-radius:7px;
+  color:var(--t3,#8aa);display:flex;align-items:center;justify-content:center;font-size:13px;
+}
+.a11y-close:hover{background:var(--hov,#162438);color:var(--t1)}
+
+/* Evita que o botão do VLibras (canto inferior direito) fique atrás de outros elementos */
+div[vw]{z-index:9989 !important}
+
+/* ── Responsivo: em telas pequenas, painel ocupa quase a largura toda ── */
+@media(max-width:480px){
+  #a11yBtn{width:48px;height:48px;font-size:19px;left:12px;bottom:12px}
+  #a11yPanel{left:12px;bottom:68px;width:calc(100vw - 24px)}
+}

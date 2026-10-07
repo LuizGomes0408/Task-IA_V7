@@ -1,0 +1,400 @@
+{% extends "base.html" %}
+{% set active = "settings" %}
+{% block title %}Configurações — TaskAI{% endblock %}
+{% block content %}
+<div class="ph">
+  <h1>Configurações</h1>
+  <p>Gerencie suas preferências e personalize sua experiência</p>
+</div>
+
+<div class="clayout">
+  <nav class="cnav" role="tablist" aria-label="Seções de configurações">
+    <div class="cni on" role="tab" tabindex="0" aria-selected="true" onclick="showP('account',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showP('account',this)}"><i class="fa-solid fa-user" aria-hidden="true"></i> Minha Conta</div>
+    <div class="cni" role="tab" tabindex="0" aria-selected="false" onclick="showP('notif',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showP('notif',this)}"><i class="fa-solid fa-bell" aria-hidden="true"></i> Notificações</div>
+    <div class="cni" role="tab" tabindex="0" aria-selected="false" onclick="showP('appear',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showP('appear',this)}"><i class="fa-solid fa-palette" aria-hidden="true"></i> Aparência</div>
+    <div class="cni" role="tab" tabindex="0" aria-selected="false" onclick="showP('plan',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showP('plan',this)}"><i class="fa-solid fa-crown" aria-hidden="true"></i> Plano</div>
+    <div class="cni" role="tab" tabindex="0" aria-selected="false" onclick="showP('a11y',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showP('a11y',this)}"><i class="fa-solid fa-universal-access" aria-hidden="true"></i> Acessibilidade</div>
+    <div class="cni" role="tab" tabindex="0" aria-selected="false" onclick="showP('sec',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showP('sec',this)}"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i> Segurança</div>
+  </nav>
+
+  <div>
+    <!-- MINHA CONTA -->
+    <div class="cpanel on" id="panel-account">
+      <div class="csec">
+        <div class="cst">Foto de perfil</div>
+        <div class="csd">Envie uma foto do seu dispositivo ou use suas iniciais com uma cor personalizada.</div>
+
+        <div class="avupwrap">
+          <div class="avbig" id="avPrev" style="{% if not user.avatar_path %}background:{{ user.avatar_color }}{% endif %}">
+            {% if user.avatar_path %}<img id="avImg" src="/static/uploads/avatars/{{ user.avatar_path }}" alt="" data-c="{{ user.avatar_color }}" data-i="{{ user.username[0]|upper }}" onerror="var p=this.parentNode;p.style.background=this.dataset.c;p.textContent=this.dataset.i">
+            {% else %}<span id="avInit">{{ user.username[0]|upper }}</span>{% endif %}
+          </div>
+          <div>
+            <div class="avbtns">
+              <label class="btn bg bsm" style="cursor:pointer">
+                <i class="fa-solid fa-upload"></i> Enviar foto
+                <input type="file" id="avFile" accept="image/png,image/jpeg,image/webp" style="display:none" onchange="uploadAvatar(this)">
+              </label>
+              <button class="btn bg bsm" onclick="removeAvatar()" id="btnRemoveAv" {% if not user.avatar_path %}style="display:none"{% endif %}>
+                <i class="fa-solid fa-trash"></i> Remover foto
+              </button>
+            </div>
+            <div style="font-size:11px;color:var(--t3);margin-top:8px">PNG, JPG ou WEBP · até 6MB. Sem foto, usamos a inicial do seu nome.</div>
+            <div class="colorpicks" id="colorPicks"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="csec">
+        <div class="cst">Informações do perfil</div>
+        <div class="csd">Atualize seu nome de usuário e email.</div>
+
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+          <span class="plchip {{ 'corp' if user.account_type=='corporativo' else 'comum' }}">
+            {{ 'Conta Corporativa' if user.account_type=='corporativo' else 'Conta Comum' }}
+          </span>
+          {% if user.plan == 'pro' %}<span class="plchip pro">Plano PRO</span>{% elif user.plan == 'especial' %}<span class="plchip pro">Plano Especial</span>{% endif %}
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div class="ff">
+            <label>Nome de usuário</label>
+            <input type="text" id="cfgUser" value="{{ user.username|e }}" oninput="updPrev()" maxlength="80"
+                   class="minp" style="margin-bottom:0">
+          </div>
+          <div class="ff">
+            <label>Email</label>
+            <input type="email" id="cfgEmail" value="{{ user.email|e }}" class="minp" style="margin-bottom:0">
+          </div>
+        </div>
+        <div class="em" id="pErr" style="margin-top:10px"></div>
+        <div style="background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.3);color:#6ee7b7;border-radius:8px;padding:10px 12px;font-size:13px;margin-top:10px;display:none" id="pOk"></div>
+        <div class="cftr">
+          <button class="btn bp" onclick="saveProfile(this)"><i class="fa-solid fa-floppy-disk"></i> Salvar alterações</button>
+        </div>
+      </div>
+
+      <div class="csec">
+        <div class="cst">Alterar senha</div>
+        <div class="csd">Mantenha sua conta segura alterando sua senha com regularidade.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px">
+          <div class="ff"><label>Senha atual</label>
+            <input type="password" id="pwC" placeholder="••••••••" class="minp" style="margin-bottom:0">
+          </div>
+          <div class="ff"><label>Nova senha</label>
+            <input type="password" id="pwN" placeholder="••••••••" class="minp" style="margin-bottom:0">
+          </div>
+          <div class="ff"><label>Confirmar senha</label>
+            <input type="password" id="pwF" placeholder="••••••••" class="minp" style="margin-bottom:0">
+          </div>
+        </div>
+        <div class="em" id="pwErr" style="margin-top:10px"></div>
+        <div style="background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.3);color:#6ee7b7;border-radius:8px;padding:10px 12px;font-size:13px;margin-top:10px;display:none" id="pwOk"></div>
+        <div class="cftr">
+          <button class="btn bp" onclick="savePw(this)"><i class="fa-solid fa-key"></i> Alterar senha</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTIFICAÇÕES -->
+    <div class="cpanel" id="panel-notif">
+      <div class="csec">
+        <div class="cst">Notificações</div>
+        <div class="csd">Você recebe notificações automáticas sempre que uma tarefa é criada, editada ou muda de status — visíveis no sino no topo da tela.</div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--card2);border:1px solid var(--br);border-radius:var(--r)">
+            <div>
+              <div style="font-size:13px;font-weight:600">Notificar quando uma tarefa é criada</div>
+              <div style="font-size:12px;color:var(--t3);margin-top:2px">Ativo por padrão</div>
+            </div>
+            <div style="width:40px;height:22px;background:var(--acc);border-radius:22px;cursor:pointer;flex-shrink:0"></div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--card2);border:1px solid var(--br);border-radius:var(--r)">
+            <div>
+              <div style="font-size:13px;font-weight:600">Notificar quando o status muda</div>
+              <div style="font-size:12px;color:var(--t3);margin-top:2px">Ativo por padrão</div>
+            </div>
+            <div style="width:40px;height:22px;background:var(--acc);border-radius:22px;cursor:pointer;flex-shrink:0"></div>
+          </div>
+        </div>
+        <div class="cftr">
+          <button class="btn bp" onclick="toast('Preferências salvas!','ok')"><i class="fa-solid fa-floppy-disk"></i> Salvar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- APARÊNCIA -->
+    <div class="cpanel" id="panel-appear">
+      <div class="csec">
+        <div class="cst">Aparência</div>
+        <div class="csd">Escolha entre o tema claro e escuro. O azul continua sendo a cor de destaque em ambos.</div>
+        <div class="thgrid">
+          <div class="thopt" id="optDark" onclick="setThemeOpt('dark')">
+            <i class="fa-solid fa-moon"></i>
+            <div style="font-size:13px;font-weight:700">Escuro</div>
+            <div style="font-size:11px;color:var(--t3)">Padrão · reduz fadiga visual</div>
+          </div>
+          <div class="thopt" id="optLight" onclick="setThemeOpt('light')">
+            <i class="fa-solid fa-sun"></i>
+            <div style="font-size:13px;font-weight:700">Claro</div>
+            <div style="font-size:11px;color:var(--t3)">Fundo claro, contraste suave</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PLANO -->
+    <div class="cpanel" id="panel-plan">
+      <div class="csec">
+        <div class="cst">Seu plano atual</div>
+        <div class="csd">
+          Você está na conta <strong>{{ 'Corporativa' if user.account_type=='corporativo' else 'Comum' }}</strong>,
+          plano <strong>{{ 'PRO' if user.plan=='pro' else ('Especial' if user.plan=='especial' else 'Gratuito') }}</strong>{% if user.is_paid() %}
+          (cobrança <strong>{{ 'anual' if user.plan_cycle=='anual' else 'mensal' }}</strong> simulada){% endif %}.
+        </div>
+        <a href="/planos" class="btn bp"><i class="fa-solid fa-crown"></i> Ver todos os planos</a>
+      </div>
+    </div>
+
+    <!-- ACESSIBILIDADE -->
+    <div class="cpanel" id="panel-a11y">
+      <div class="csec">
+        <div class="cst">Recursos de acessibilidade</div>
+        <div class="csd">
+          O TaskAI tem um painel de acessibilidade disponível em <strong>todas as páginas</strong>,
+          através do botão flutuante <i class="fa-solid fa-universal-access" aria-hidden="true"></i> no canto
+          inferior esquerdo da tela. Nele você encontra:
+        </div>
+        <ul style="margin:14px 0 18px;padding-left:18px;font-size:13px;color:var(--t2);line-height:1.9">
+          <li>Aumento do tamanho da fonte, para baixa visão</li>
+          <li>Modo de alto contraste (preto e amarelo)</li>
+          <li>Sublinhado automático de links</li>
+          <li>Redução de animações e transições</li>
+          <li>Leitura da página em voz alta (síntese de voz)</li>
+          <li>Tradução em Libras — Língua Brasileira de Sinais (widget oficial do governo, VLibras), para pessoas surdas ou com deficiência auditiva</li>
+        </ul>
+        <button class="btn bp" type="button" data-open-a11y onclick="window.openA11yPanel && window.openA11yPanel()">
+          <i class="fa-solid fa-universal-access"></i> Abrir painel de acessibilidade agora
+        </button>
+      </div>
+    </div>
+
+    <!-- SEGURANÇA -->
+    <div class="cpanel" id="panel-sec">
+      <div class="csec">
+        <div class="cst"><i class="fa-solid fa-shield-halved" style="color:var(--acc);margin-right:8px"></i>Segurança e Privacidade</div>
+        <div class="csd">Entenda como seus dados são tratados e protegidos.</div>
+
+        <div class="lgpd">
+          <div class="lgpdt"><i class="fa-solid fa-scale-balanced"></i>Lei Geral de Proteção de Dados (LGPD — Lei nº 13.709/2018)</div>
+          <div class="lgpdb">
+            <p>O <strong>TaskAI</strong> está em total conformidade com a <strong>Lei Geral de Proteção de Dados (LGPD)</strong>. Todos os seus dados pessoais — incluindo nome, email, senha, tarefas e foto de perfil — são tratados como <strong>dados sensíveis</strong> e protegidos com as mais altas medidas de segurança disponíveis.</p>
+            <p><strong>Sobre o armazenamento:</strong> Suas informações são armazenadas de forma segura em banco de dados. Senhas são protegidas por algoritmos de hash criptográfico e jamais são armazenadas em texto simples. Nenhum dado é compartilhado com terceiros.</p>
+            <p><strong>Direito ao esquecimento:</strong> Em conformidade com o Art. 18 da LGPD, ao <strong>excluir sua conta</strong>, todos os seus dados pessoais, tarefas, conversas com a IA e foto de perfil são <strong>permanentemente removidos</strong>. A exclusão é imediata e irreversível.</p>
+            <p><strong>Transparência:</strong> Você tem controle total sobre seus dados. Pode visualizar, editar e excluir qualquer informação a qualquer momento através das configurações de conta.</p>
+            <p style="color:var(--acc);font-weight:500"><i class="fa-solid fa-lock" style="margin-right:6px"></i>Todos os seus dados são tratados com confidencialidade e proteção máxima.</p>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+          <div style="background:var(--card2);border:1px solid var(--br);border-radius:var(--r);padding:14px;text-align:center">
+            <i class="fa-solid fa-lock" style="font-size:20px;color:var(--acc);margin-bottom:8px;display:block"></i>
+            <div style="font-size:12px;font-weight:600">Senhas Criptografadas</div>
+            <div style="font-size:11px;color:var(--t3);margin-top:3px">hash seguro</div>
+          </div>
+          <div style="background:var(--card2);border:1px solid var(--br);border-radius:var(--r);padding:14px;text-align:center">
+            <i class="fa-solid fa-shield-halved" style="font-size:20px;color:var(--ok);margin-bottom:8px;display:block"></i>
+            <div style="font-size:12px;font-weight:600">Dados Protegidos</div>
+            <div style="font-size:11px;color:var(--t3);margin-top:3px">LGPD compliant</div>
+          </div>
+          <div style="background:var(--card2);border:1px solid var(--br);border-radius:var(--r);padding:14px;text-align:center">
+            <i class="fa-solid fa-trash-can" style="font-size:20px;color:var(--err);margin-bottom:8px;display:block"></i>
+            <div style="font-size:12px;font-weight:600">Exclusão Total</div>
+            <div style="font-size:11px;color:var(--t3);margin-top:3px">Sem rastros</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="csec">
+        <div class="cst">Excluir conta</div>
+        <div class="csd">Esta ação é permanente e irreversível.</div>
+        <div class="delbox">
+          <div class="delt"><i class="fa-solid fa-triangle-exclamation" style="margin-right:8px"></i>Zona de perigo</div>
+          <div class="deld">Ao excluir sua conta, <strong>todos os seus dados serão permanentemente apagados</strong>, incluindo perfil, tarefas, conversas com a IA e funcionários cadastrados. Esta ação é <strong>irreversível</strong> e está em conformidade com a LGPD.</div>
+          <button class="btn bdg" onclick="document.getElementById('delAccMod').classList.add('on')">
+            <i class="fa-solid fa-trash"></i> Excluir minha conta
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete account modal -->
+<div class="ov" id="delAccMod">
+  <div class="modal">
+    <div class="mtitle"><i class="fa-solid fa-triangle-exclamation" style="color:var(--err);margin-right:8px"></i>Excluir conta permanentemente</div>
+    <div class="mdesc">Esta ação é <strong>permanente e irreversível</strong>. Todos os seus dados serão excluídos imediatamente (LGPD).<br><br>Digite sua senha para confirmar:</div>
+    <input type="password" id="delPw" class="minp" placeholder="Sua senha atual">
+    <div class="em" id="delErr"></div>
+    <div class="mfoot">
+      <button class="btn bg" onclick="closeDel()">Cancelar</button>
+      <button class="btn bdg" onclick="delAcc(this)"><i class="fa-solid fa-trash"></i> Excluir definitivamente</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const PALETTE=['#2563eb','#7c3aed','#0d9488','#db2777','#ea580c','#16a34a','#0891b2','#dc2626'];
+let curColor = '{{ user.avatar_color }}';
+let hasAvatarPhoto = {{ 'true' if user.avatar_path else 'false' }};
+
+function renderColorPicks(){
+  const wrap=document.getElementById('colorPicks');
+  wrap.innerHTML = PALETTE.map(c=>`<div class="cpick ${c.toLowerCase()===curColor.toLowerCase()?'sel':''}" style="background:${c}" onclick="pickColor('${c}')"></div>`).join('');
+  wrap.style.display = hasAvatarPhoto ? 'none' : 'flex';
+}
+renderColorPicks();
+
+async function pickColor(c){
+  curColor=c;
+  const d=await api('PUT','/api/user/avatar-color',{color:c});
+  if(d.success){
+    renderColorPicks();
+    if(!hasAvatarPhoto){
+      document.getElementById('avPrev').style.background=c;
+      document.getElementById('topAvatar').style.background=c;
+    }
+    toast('Cor atualizada','ok');
+  }
+}
+
+function showP(id,el){
+  document.querySelectorAll('.cpanel').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.cni').forEach(n=>{n.classList.remove('on');n.setAttribute('aria-selected','false');});
+  document.getElementById('panel-'+id).classList.add('on');
+  el.classList.add('on');
+  el.setAttribute('aria-selected','true');
+}
+function updPrev(){
+  const n=document.getElementById('cfgUser').value.trim();
+  if(!hasAvatarPhoto){
+    const el=document.getElementById('avInit');
+    if(el)el.textContent=n?n[0].toUpperCase():'?';
+  }
+  document.getElementById('namePrev') && (document.getElementById('namePrev').textContent=n||'—');
+}
+
+/* ── Avatar upload ── */
+async function uploadAvatar(input){
+  const file=input.files[0]; if(!file) return;
+  if(file.size > 6*1024*1024){toast('Imagem muito grande (máx. 6MB)','err');return;}
+  const fd=new FormData(); fd.append('avatar',file);
+  toast('Enviando foto…','inf');
+  try{
+    const r=await fetch('/api/user/avatar',{method:'POST',body:fd});
+    const d=await r.json();
+    if(d.success){
+      hasAvatarPhoto=true;
+      const prev=document.getElementById('avPrev');
+      prev.style.background='transparent';
+      prev.innerHTML=`<img src="${d.avatar_url}?t=${Date.now()}" alt="">`;
+      document.getElementById('topAvatar').style.background='transparent';
+      document.getElementById('topAvatar').innerHTML=`<img src="${d.avatar_url}?t=${Date.now()}" alt="">`;
+      document.getElementById('btnRemoveAv').style.display='inline-flex';
+      renderColorPicks();
+      toast('Foto de perfil atualizada!','ok');
+    } else toast(d.error||'Erro ao enviar imagem.','err');
+  }catch(e){toast('Erro ao enviar imagem.','err');}
+  input.value='';
+}
+async function removeAvatar(){
+  const d=await api('DELETE','/api/user/avatar',{});
+  if(d.success){
+    hasAvatarPhoto=false;
+    const initial=document.getElementById('cfgUser').value.trim()[0]?.toUpperCase()||'?';
+    const prev=document.getElementById('avPrev');
+    prev.style.background=curColor;
+    prev.innerHTML=`<span id="avInit">${initial}</span>`;
+    document.getElementById('topAvatar').style.background=curColor;
+    document.getElementById('topAvatar').innerHTML=initial;
+    document.getElementById('btnRemoveAv').style.display='none';
+    renderColorPicks();
+    toast('Foto removida','ok');
+  }
+}
+
+/* ── Tema ── */
+function markThemeUI(t){
+  document.getElementById('optDark').classList.toggle('sel',t==='dark');
+  document.getElementById('optLight').classList.toggle('sel',t==='light');
+}
+markThemeUI(document.documentElement.getAttribute('data-theme')||'dark');
+async function setThemeOpt(t){
+  document.documentElement.setAttribute('data-theme',t);
+  localStorage.setItem('taskai-theme',t);
+  markThemeUI(t);
+  applyThemeIcon(t);
+  await api('PUT','/api/user/theme',{theme:t});
+}
+
+async function saveProfile(btn){
+  const un=document.getElementById('cfgUser').value.trim();
+  const em=document.getElementById('cfgEmail').value.trim();
+  const eEl=document.getElementById('pErr');const oEl=document.getElementById('pOk');
+  eEl.style.display='none';oEl.style.display='none';
+  if(!un||!em){eEl.textContent='Preencha todos os campos.';eEl.style.display='block';return;}
+  btn.disabled=true;btn.innerHTML='<span class="spin"></span>';
+  const d=await api('PUT','/api/user/update',{username:un,email:em});
+  btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-floppy-disk"></i> Salvar alterações';
+  if(d.success){
+    oEl.textContent='Alterações salvas com sucesso!';oEl.style.display='block';
+    if(!hasAvatarPhoto){document.querySelectorAll('#avInit').forEach(a=>a.textContent=un[0].toUpperCase());
+      document.getElementById('topAvatar').textContent=un[0].toUpperCase();}
+    document.querySelectorAll('.unl').forEach(a=>a.textContent=un);
+    document.querySelector('.udn').textContent=un;
+    document.querySelector('.ude').textContent=em;
+    setTimeout(()=>oEl.style.display='none',3000);
+  }else{eEl.textContent=d.error||'Erro ao salvar.';eEl.style.display='block';}
+}
+
+async function savePw(btn){
+  const c=document.getElementById('pwC').value;
+  const n=document.getElementById('pwN').value;
+  const f=document.getElementById('pwF').value;
+  const eEl=document.getElementById('pwErr');const oEl=document.getElementById('pwOk');
+  eEl.style.display='none';oEl.style.display='none';
+  if(!c||!n||!f){eEl.textContent='Preencha todos os campos.';eEl.style.display='block';return;}
+  if(n!==f){eEl.textContent='As novas senhas não coincidem.';eEl.style.display='block';return;}
+  if(n.length<6){eEl.textContent='Nova senha deve ter pelo menos 6 caracteres.';eEl.style.display='block';return;}
+  btn.disabled=true;btn.innerHTML='<span class="spin"></span>';
+  const d=await api('PUT','/api/user/password',{current_password:c,new_password:n});
+  btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-key"></i> Alterar senha';
+  if(d.success){
+    oEl.textContent='Senha alterada com sucesso!';oEl.style.display='block';
+    document.getElementById('pwC').value='';document.getElementById('pwN').value='';document.getElementById('pwF').value='';
+    setTimeout(()=>oEl.style.display='none',3000);
+  }else{eEl.textContent=d.error||'Erro ao alterar senha.';eEl.style.display='block';}
+}
+
+async function delAcc(btn){
+  const pw=document.getElementById('delPw').value;
+  const eEl=document.getElementById('delErr');eEl.style.display='none';
+  if(!pw){eEl.textContent='Digite sua senha.';eEl.style.display='block';return;}
+  btn.disabled=true;btn.innerHTML='<span class="spin"></span>';
+  const d=await api('DELETE','/api/user/delete',{password:pw});
+  btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-trash"></i> Excluir definitivamente';
+  if(d.success){window.location.href='/login';}
+  else{eEl.textContent=d.error||'Erro ao excluir.';eEl.style.display='block';}
+}
+
+function closeDel(){
+  document.getElementById('delAccMod').classList.remove('on');
+  document.getElementById('delPw').value='';
+  document.getElementById('delErr').style.display='none';
+}
+document.getElementById('delAccMod').addEventListener('click',function(e){if(e.target===this)closeDel();});
+</script>
+{% endblock %}

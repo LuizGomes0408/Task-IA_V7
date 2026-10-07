@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% set active = "planos" %}
+{% block title %}Planos — TaskAI{% endblock %}
+{% block content %}
+{% set FEATS = [
+  ('ia',  'Assistente de IA'),
+  ('msg', 'Mensagens ilimitadas'),
+  ('tar', 'Tarefas ilimitadas'),
+  ('rel', 'Relatório das tarefas'),
+  ('eq',  'Equipes ilimitadas'),
+  ('fun', 'Sem limite de funcionários nas equipes')] %}
+{% set HAS = {
+  'free':     ['ia','tar'],
+  'especial': ['ia','msg','tar','rel'],
+  'pro':      ['ia','msg','tar','rel','eq','fun'] } %}
+{% macro feats(key) %}
+<ul class="pfeats">
+  {% for k, label in FEATS %}
+    {% if k in HAS[key] %}
+    <li class="yes"><i class="fa-solid fa-circle-check" aria-hidden="true"></i><span class="sr-only">Incluído: </span>{{ label }}</li>
+    {% else %}
+    <li class="no"><i class="fa-solid fa-circle-xmark" aria-hidden="true"></i><span class="sr-only">Não incluído: </span><s>{{ label }}</s></li>
+    {% endif %}
+  {% endfor %}
+</ul>
+{% endmacro %}
+{% macro price(key) %}
+<div class="pbox" data-plan="{{ key }}">
+  <div class="pm">
+    <div class="pnow">R$ {{ ('%.2f'|format(plans[key].monthly))|replace('.', ',') }} <small>/mês</small></div>
+  </div>
+  <div class="pa" hidden>
+    <div class="pline"><span class="pold" aria-label="Preço original">R$ {{ ('%.2f'|format(plans[key].annual_old))|replace('.', ',') }}</span>
+      <span class="psave">-{{ plans[key].pct }}%</span></div>
+    <div class="pnow">R$ {{ ('%.2f'|format(plans[key].annual))|replace('.', ',') }} <small>/ano</small></div>
+    <div class="pcycnote">equivale a R$ {{ ('%.2f'|format(plans[key].per_month))|replace('.', ',') }}/mês · você economiza R$ {{ ('%.2f'|format(plans[key].saving))|replace('.', ',') }}</div>
+  </div>
+</div>
+{% endmacro %}
+
+<div class="ph">
+  <h1>Planos</h1>
+  <p>Escolha o plano ideal para você ou para sua equipe</p>
+</div>
+
+<div class="cycletog cyc-center" role="radiogroup" aria-label="Ciclo de cobrança">
+  <button type="button" class="cyc-opt on" id="cycMensal" role="radio" aria-checked="true" onclick="setCycle('mensal')">Mensal</button>
+  <button type="button" class="cyc-opt" id="cycAnual" role="radio" aria-checked="false" onclick="setCycle('anual')">Anual <span class="cyc-badge">até -30%</span></button>
+</div>
+
+<div class="plans plans3">
+  <!-- BÁSICO PESSOAL -->
+  <div class="plan {{ 'hl' if user.plan=='free' and user.account_type=='comum' else '' }}">
+    <h3>Básico</h3>
+    <div class="pdesc">Pessoal</div>
+    <div class="pbox"><div class="pnow">Gratuito</div>
+      <div class="pcycnote muted" id="freeNote">Mensagens limitadas</div></div>
+    {{ feats('free') }}
+    {% if user.plan=='free' and user.account_type=='comum' %}
+      <div class="demonote"><i class="fa-solid fa-check"></i> Este é o seu plano atual</div>
+    {% elif user.plan!='free' and user.account_type=='comum' %}
+      <button class="btn bg bfull" onclick="doDowngrade(this)"><i class="fa-solid fa-rotate-left"></i> Voltar ao plano gratuito</button>
+    {% endif %}
+  </div>
+
+  <!-- ESPECIAL PESSOAL -->
+  <div class="plan {{ 'hl' if user.plan=='especial' else '' }}" style="border-color:var(--acc)">
+    <div class="ptag">Mais popular</div>
+    <h3><i class="fa-solid fa-star" style="color:#fbbf24;margin-right:5px" aria-hidden="true"></i>Especial</h3>
+    <div class="pdesc">Pessoal</div>
+    {{ price('especial') }}
+    {{ feats('especial') }}
+    {% if user.plan=='especial' %}
+      <div class="demonote" style="margin-bottom:10px"><i class="fa-solid fa-check"></i> Plano atual ({{ 'anual' if user.plan_cycle=='anual' else 'mensal' }} · demonstração)</div>
+      <button class="btn bg bfull" onclick="doDowngrade(this)"><i class="fa-solid fa-rotate-left"></i> Voltar ao plano gratuito</button>
+    {% elif user.account_type=='comum' %}
+      <button class="btn bp bfull" onclick="doUpgrade(this,'especial')"><i class="fa-solid fa-star"></i> <span class="upLbl">Assinar Especial mensal</span></button>
+    {% else %}
+      <button class="btn bg bfull" disabled>Disponível para contas pessoais</button>
+    {% endif %}
+  </div>
+
+  <!-- PRO CORPORATIVO -->
+  <div class="plan {{ 'hl' if user.plan=='pro' else '' }}" style="border-color:var(--acc)">
+    <div class="ptag">Empresarial</div>
+    <h3><i class="fa-solid fa-crown" style="color:#fbbf24;margin-right:5px" aria-hidden="true"></i>PRO</h3>
+    <div class="pdesc">Corporativo</div>
+    {{ price('pro') }}
+    {{ feats('pro') }}
+    {% if user.plan=='pro' %}
+      <div class="demonote" style="margin-bottom:10px"><i class="fa-solid fa-check"></i> Plano atual ({{ 'anual' if user.plan_cycle=='anual' else 'mensal' }} · demonstração)</div>
+      <button class="btn bg bfull" onclick="doDowngrade(this)"><i class="fa-solid fa-rotate-left"></i> Voltar ao plano gratuito</button>
+    {% elif user.account_type=='corporativo' %}
+      <button class="btn bp bfull" onclick="doUpgrade(this,'pro')"><i class="fa-solid fa-crown"></i> <span class="upLbl">Assinar PRO mensal</span></button>
+    {% else %}
+      <button class="btn bg bfull" disabled>Disponível para contas empresariais</button>
+    {% endif %}
+  </div>
+</div>
+<div class="demonote" style="max-width:640px;margin:18px auto 0"><i class="fa-solid fa-circle-info"></i> Ambiente de demonstração — nenhuma cobrança real é feita ao ativar um plano. Os valores são ilustrativos.</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let selectedCycle = '{{ user.plan_cycle if user.plan_cycle else "mensal" }}';
+function setCycle(c){
+  selectedCycle = c;
+  const an = c === 'anual';
+  document.getElementById('cycMensal').classList.toggle('on', !an);
+  document.getElementById('cycAnual').classList.toggle('on', an);
+  document.getElementById('cycMensal').setAttribute('aria-checked', String(!an));
+  document.getElementById('cycAnual').setAttribute('aria-checked', String(an));
+  document.querySelectorAll('.pbox .pm').forEach(e => e.hidden = an);
+  document.querySelectorAll('.pbox .pa').forEach(e => e.hidden = !an);
+  document.querySelectorAll('.upLbl').forEach(e => {
+    e.textContent = e.textContent.replace(/(mensal|anual)$/, an ? 'anual' : 'mensal');
+  });
+}
+setCycle(selectedCycle);
+
+async function doUpgrade(btn, plan){
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span>';
+  const d = await api('POST', '/api/plans/upgrade', {plan: plan, cycle: selectedCycle});
+  if(d.success){ toast('Plano ativado! (demonstração)', 'ok'); setTimeout(() => location.reload(), 700); }
+  else { toast(d.error || 'Erro ao ativar plano.', 'err'); btn.disabled = false; }
+}
+async function doDowngrade(btn){
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span>';
+  const d = await api('POST', '/api/plans/downgrade', {});
+  if(d.success){ toast('Plano gratuito restaurado.', 'ok'); setTimeout(() => location.reload(), 700); }
+  else { toast('Erro ao alterar plano.', 'err'); btn.disabled = false; }
+}
+</script>
+{% endblock %}

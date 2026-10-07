@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+*.pyo
+instance/
+*.db
+.env
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+.DS_Store
+static/uploads/avatars/*
+!static/uploads/avatars/.gitkeep
+static/uploads/reports/*
+!static/uploads/reports/.gitkeep

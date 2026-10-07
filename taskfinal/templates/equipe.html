@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% set active = "equipe" %}
+{% block title %}Equipe — TaskAI{% endblock %}
+{% block content %}
+<div class="ph">
+  <h1>Minha Equipe</h1>
+  <p>Cadastre funcionários, atribua tarefas e acompanhe o progresso de cada um</p>
+</div>
+
+<div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+  <button class="btn bp" onclick="document.getElementById('addMod').classList.add('on')">
+    <i class="fa-solid fa-user-plus"></i> Adicionar funcionário
+  </button>
+  <a href="/api/report/docx?scope=team" class="btn bg" target="_blank" title="Gera um .docx com texto, mini planilha e gráficos das tarefas feitas, em andamento e não feitas">
+    <i class="fa-solid fa-file-word" aria-hidden="true"></i> Relatório da equipe (texto + planilha + gráficos)
+  </a>
+  <span style="font-size:12px;color:var(--t3);align-self:center;margin-left:auto">
+    {{ employees|length }} funcionário(s) cadastrado(s)
+  </span>
+</div>
+
+<div class="empgrid" id="empGrid">
+  {% for e in employees %}
+  <div class="empcard" id="emp-{{ e.id }}">
+    <div class="emphead">
+      <div class="empav" style="background:{{ e.color }}">{{ e.name[0]|upper }}</div>
+      <div><div class="empn">{{ e.name }}</div><div class="empr">{{ e.role or 'Sem cargo definido' }}</div></div>
+      <button class="empdel" onclick="delEmp({{ e.id }})" title="Remover" aria-label="Remover funcionário {{ e.name }}"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
+    </div>
+    <div class="empbar"><div class="empbarf" style="width:{{ e.pct }}%"></div></div>
+    <div class="empstats">
+      <span>{{ e.total }} tarefa(s)</span>
+      <span>{{ e.concluido }} concluída(s) · {{ e.pct }}%</span>
+    </div>
+  </div>
+  {% else %}
+  <div style="grid-column:1/-1;text-align:center;padding:50px 0;color:var(--t3)">
+    <i class="fa-solid fa-users" style="font-size:34px;display:block;margin-bottom:12px"></i>
+    Nenhum funcionário cadastrado ainda. Clique em "Adicionar funcionário" para começar.
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Add employee modal -->
+<div class="ov" id="addMod">
+  <div class="modal">
+    <div class="mtitle"><i class="fa-solid fa-user-plus" style="color:var(--acc);margin-right:8px"></i>Novo funcionário</div>
+    <div class="ff" style="margin-bottom:12px">
+      <label>Nome *</label>
+      <input type="text" id="empName" class="minp" style="margin-bottom:0" maxlength="120" placeholder="Ex.: Maria Souza">
+    </div>
+    <div class="ff" style="margin-bottom:0">
+      <label>Cargo (opcional)</label>
+      <input type="text" id="empRole" class="minp" style="margin-bottom:0" maxlength="120" placeholder="Ex.: Analista de Vendas">
+    </div>
+    <div class="em" id="empErr"></div>
+    <div class="mfoot">
+      <button class="btn bg" onclick="closeMod('addMod')">Cancelar</button>
+      <button class="btn bp" onclick="addEmp(this)"><i class="fa-solid fa-check"></i> Adicionar</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('addMod').addEventListener('click',e=>{if(e.target.id==='addMod')closeMod('addMod');});
+function closeMod(id){document.getElementById(id).classList.remove('on');document.getElementById('empErr').style.display='none';}
+
+async function addEmp(btn){
+  const name=document.getElementById('empName').value.trim();
+  const role=document.getElementById('empRole').value.trim();
+  const eEl=document.getElementById('empErr'); eEl.style.display='none';
+  if(!name){eEl.textContent='Informe o nome do funcionário.';eEl.style.display='block';return;}
+  btn.disabled=true;btn.innerHTML='<span class="spin"></span>';
+  const d=await api('POST','/api/employees',{name,role});
+  btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-check"></i> Adicionar';
+  if(d.success){
+    toast('Funcionário adicionado!','ok');
+    closeMod('addMod');
+    document.getElementById('empName').value='';document.getElementById('empRole').value='';
+    location.reload();
+  } else if(d.upgrade_required){
+    eEl.textContent=d.error; eEl.style.display='block';
+    setTimeout(()=>{ if(confirm(d.error+'\n\nDeseja ver os planos?')) window.location.href='/planos'; },300);
+  } else {
+    eEl.textContent=d.error||'Erro ao adicionar.'; eEl.style.display='block';
+  }
+}
+async function delEmp(id){
+  if(!confirm('Remover este funcionário? As tarefas atribuídas a ele ficarão sem responsável.'))return;
+  const d=await api('DELETE',`/api/employees/${id}`,{});
+  if(d.success){document.getElementById('emp-'+id).remove();toast('Funcionário removido','ok');}
+  else toast(d.error||'Erro','err');
+}
+</script>
+{% endblock %}

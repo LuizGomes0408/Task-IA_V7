@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+{% set active = "dashboard" %}
+{% block title %}Dashboard — TaskAI{% endblock %}
+{% block content %}
+<div class="ph">
+  <h1>Gerenciador de Tarefas com IA</h1>
+  <p>Crie tarefas e converse com seu assistente inteligente</p>
+</div>
+
+<div class="stats">
+  <div class="sc"><div class="sci bl"><i class="fa-solid fa-layer-group"></i></div>
+    <div><div class="scv" id="dT">{{ stats.total }}</div><div class="scl">Total de tarefas</div></div></div>
+  <div class="sc"><div class="sci am"><i class="fa-solid fa-clock"></i></div>
+    <div><div class="scv" id="dP">{{ stats.pendente }}</div><div class="scl">Pendentes</div></div></div>
+  <div class="sc"><div class="sci vi"><i class="fa-solid fa-spinner"></i></div>
+    <div><div class="scv" id="dE">{{ stats.em_andamento }}</div><div class="scl">Em andamento</div></div></div>
+  <div class="sc"><div class="sci gr"><i class="fa-solid fa-circle-check"></i></div>
+    <div><div class="scv" id="dD">{{ stats.concluido }}</div><div class="scl">Concluídas</div></div></div>
+</div>
+
+<div class="dlayout">
+  <!-- LEFT -->
+  <div class="dleft">
+    <!-- Create task -->
+    <div class="ccard" id="createCard">
+      <h3><i class="fa-solid fa-plus" style="color:var(--acc);margin-right:7px"></i>Nova Tarefa</h3>
+      <div class="ff">
+        <label>Nome da tarefa *</label>
+        <input type="text" id="tName" placeholder="Ex.: Finalizar relatório até sexta-feira" maxlength="200">
+      </div>
+      <div class="ff">
+        <label>Descrição</label>
+        <textarea id="tDesc" placeholder="Detalhes da tarefa…"></textarea>
+      </div>
+      <div class="frow">
+        <div class="ff"><label>Prioridade</label>
+          <select id="tPrio">
+            <option value="alta">🔴 Alta</option>
+            <option value="media" selected>🟡 Média</option>
+            <option value="baixa">🟢 Baixa</option>
+          </select>
+        </div>
+        <div class="ff"><label>Prazo</label>
+          <input type="date" id="tDl">
+        </div>
+      </div>
+      {% if user.account_type == 'corporativo' %}
+      <div class="ff">
+        <label>Atribuir a (funcionário)</label>
+        <select id="tEmp">
+          <option value="">— Ninguém (tarefa pessoal) —</option>
+          {% for e in employees %}
+          <option value="{{ e.id }}">{{ e.name }}</option>
+          {% endfor %}
+        </select>
+        {% if not employees %}
+        <div style="font-size:11px;color:var(--t3);margin-top:5px">
+          Nenhum funcionário cadastrado — <a href="/equipe" style="color:var(--acc)">gerencie sua equipe</a>.
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+      <div class="cfooter">
+        <button class="btn bp" onclick="createTask(this)">
+          <i class="fa-solid fa-plus"></i> Criar Tarefa
+        </button>
+      </div>
+    </div>
+
+    <!-- Recent tasks -->
+    <div>
+      <div class="sech">
+        <span class="sect">Tarefas Recentes</span>
+        <a class="secl" href="/tasks">Ver todas →</a>
+      </div>
+      <div class="tcards" id="rcards">
+        {% if recent_tasks %}
+          {% for t in recent_tasks %}
+          <div class="tc">
+            <div class="tch"><div class="tcn" title="{{ t.name|e }}">{{ t.name|e }}</div></div>
+            <div class="tcd">{{ (t.description or 'Sem descrição')|e }}</div>
+            <div class="tcf">
+              {% if t.status=='pendente' %}<span class="badge bpend">Pendente</span>
+              {% elif t.status=='em_andamento' %}<span class="badge bprog">Em andamento</span>
+              {% else %}<span class="badge bdone">Concluído</span>{% endif %}
+              {% if t.priority=='alta' %}<span class="badge balta">Alta</span>
+              {% elif t.priority=='media' %}<span class="badge bmed">Média</span>
+              {% else %}<span class="badge bbai">Baixa</span>{% endif %}
+              {% if t.employee_id and t.employee %}<span class="badge" style="background:var(--acc-dim);color:var(--acc)"><i class="fa-solid fa-user" style="font-size:9px"></i> {{ t.employee.name }}</span>{% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div id="emptyMsg" style="grid-column:1/-1;text-align:center;padding:32px 0;color:var(--t3)">
+            <i class="fa-solid fa-inbox" style="font-size:32px;display:block;margin-bottom:10px"></i>
+            Nenhuma tarefa ainda — crie a sua primeira acima!
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- AI CHAT -->
+  <div class="aipanel">
+    <div class="aihead">
+      <div class="aiico"><i class="fa-solid fa-robot"></i></div>
+      <div style="flex:1"><div class="ait">Assistente <abbr title="Inteligência Artificial">IA</abbr></div><div class="ais">TaskAI · Groq</div></div>
+      <a href="/chat" class="bico" title="Ver histórico completo"><i class="fa-solid fa-up-right-and-down-left-from-center"></i></a>
+    </div>
+    <div class="aimsgs" id="aimsgs">
+      <div class="aim">
+        <div class="mav ai"><i class="fa-solid fa-robot" style="font-size:10px"></i></div>
+        <div class="mbody">
+          <div class="bub">Olá! 👋 Sou o TaskAI, seu assistente de produtividade. Posso ajudar com dicas de organização, priorização, status da equipe e gerar relatórios. Como posso ajudar?</div>
+          <span class="mt" id="initTime"></span>
+        </div>
+      </div>
+    </div>
+    <div class="aiinp">
+      <input type="text" id="aiinp" placeholder="Pergunte algo para a IA…" onkeydown="if(event.key==='Enter')sendAI()">
+      <button class="sbtn" onclick="sendAI()"><i class="fa-solid fa-paper-plane"></i></button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const UI = '{{ user.username[0]|upper }}';
+let convId = null;
+document.getElementById('initTime').textContent = nT();
+
+/* carrega a conversa ativa (continua o histórico do usuário) */
+(async function loadActiveConv(){
+  try{
+    const d = await api('GET','/api/chat/active');
+    const conv = d.conversation;
+    convId = conv.id;
+    if(conv.messages && conv.messages.length){
+      const box=document.getElementById('aimsgs');
+      box.innerHTML='';
+      conv.messages.forEach(m=>appendMsg(m.role==='user'?'user':'ai', m.content, m.report_url));
+    }
+  }catch(e){}
+})();
+
+/* focus on load if came from sidebar */
+if(new URLSearchParams(location.search).get('focus')){
+  document.getElementById('tName').focus();
+  history.replaceState(null,'','/dashboard');
+}
+
+function nT(){return new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}
+
+async function createTask(btn){
+  const name=document.getElementById('tName').value.trim();
+  if(!name){toast('Informe o nome da tarefa.','err');document.getElementById('tName').focus();return;}
+  btn.disabled=true;btn.innerHTML='<span class="spin"></span>';
+  const empEl=document.getElementById('tEmp');
+  const d=await api('POST','/api/tasks',{
+    name,
+    description:document.getElementById('tDesc').value.trim(),
+    priority:document.getElementById('tPrio').value,
+    deadline:document.getElementById('tDl').value||null,
+    employee_id: empEl ? (empEl.value||null) : null,
+  });
+  btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-plus"></i> Criar Tarefa';
+  if(d.success){
+    toast('Tarefa criada!','ok');
+    document.getElementById('tName').value='';
+    document.getElementById('tDesc').value='';
+    document.getElementById('tDl').value='';
+    if(empEl)empEl.value='';
+    addCard(d.task);
+    refreshStats();
+    loadWidget();
+  }else toast(d.error||'Erro ao criar tarefa.','err');
+}
+
+function addCard(t){
+  const c=document.getElementById('rcards');
+  const em=document.getElementById('emptyMsg');if(em)em.remove();
+  const sb={pendente:'<span class="badge bpend">Pendente</span>',
+             em_andamento:'<span class="badge bprog">Em andamento</span>',
+             concluido:'<span class="badge bdone">Concluído</span>'}[t.status]||'';
+  const pb={alta:'<span class="badge balta">Alta</span>',
+             media:'<span class="badge bmed">Média</span>',
+             baixa:'<span class="badge bbai">Baixa</span>'}[t.priority]||'';
+  const eb=t.employee_name?`<span class="badge" style="background:var(--acc-dim);color:var(--acc)"><i class="fa-solid fa-user" style="font-size:9px"></i> ${X(t.employee_name)}</span>`:'';
+  const el=document.createElement('div');
+  el.className='tc';
+  el.innerHTML=`<div class="tch"><div class="tcn" title="${X(t.name)}">${X(t.name)}</div></div>
+    <div class="tcd">${X(t.description||'Sem descrição')}</div>
+    <div class="tcf">${sb}${pb}${eb}</div>`;
+  c.prepend(el);
+  const all=c.querySelectorAll('.tc');
+  if(all.length>6)all[all.length-1].remove();
+}
+
+async function refreshStats(){
+  const d=await api('GET','/api/tasks');const s=d.stats;
+  document.getElementById('dT').textContent=s.total;
+  document.getElementById('dP').textContent=s.pendente;
+  document.getElementById('dE').textContent=s.em_andamento;
+  document.getElementById('dD').textContent=s.concluido;
+}
+
+async function sendAI(){
+  const inp=document.getElementById('aiinp');
+  const msg=inp.value.trim();if(!msg)return;
+  if(!convId){toast('Carregando conversa, tente novamente em instantes.','inf');return;}
+  inp.value='';
+  appendMsg('user',msg);
+  const ty=appendTyping();
+  const d=await api('POST',`/api/chat/conversations/${convId}/messages`,{message:msg});
+  ty.remove();
+  if(d.success){
+    appendMsg('ai',d.response,d.report_url);
+  } else if(d.limit_reached){
+    appendMsg('ai',d.error);
+    setTimeout(()=>{ if(confirm('Deseja ver os planos disponíveis?')) window.location.href='/planos'; },300);
+  } else {
+    appendMsg('ai',d.error||'Erro ao contatar a IA.');
+  }
+}
+
+function appendMsg(role,text,reportUrl){
+  const box=document.getElementById('aimsgs');
+  const div=document.createElement('div');
+  div.className=role==='user'?'um':'aim';
+  const av=role==='user'
+    ?`<div class="mav u">${UI}</div>`
+    :`<div class="mav ai"><i class="fa-solid fa-robot" style="font-size:10px"></i></div>`;
+  const rl=reportUrl?`<br><a class="reportlink" href="${reportUrl}" target="_blank"><i class="fa-solid fa-file-word"></i> Baixar relatório (.docx)</a>`:'';
+  div.innerHTML=`${av}<div class="mbody"><div class="bub">${X(text).replace(/\n/g,'<br>')}${rl}</div><span class="mt">${nT()}</span></div>`;
+  box.appendChild(div);box.scrollTop=box.scrollHeight;
+}
+
+function appendTyping(){
+  const box=document.getElementById('aimsgs');
+  const div=document.createElement('div');div.className='aim';
+  div.innerHTML=`<div class="mav ai"><i class="fa-solid fa-robot" style="font-size:10px"></i></div>
+    <div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
+  box.appendChild(div);box.scrollTop=box.scrollHeight;return div;
+}
+</script>
+{% endblock %}

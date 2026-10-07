@@ -1,0 +1,1997 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TaskAI — Demo</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%232563eb'/%3E%3Cpath d='M18 33l9 9 19-19' stroke='white' stroke-width='6' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+:root{
+  --bg:#07101e;--sb:#0b1525;--card:#0f1e30;--card2:#132035;--inp:#0c1828;--hov:#162438;
+  --acc:#2563eb;--acc-h:#1d4ed8;--acc-dim:rgba(37,99,235,.13);--acc-br:rgba(37,99,235,.35);
+  --t1:#e8edf5;--t2:#7f98b5;--t3:#3d5a78;--br:rgba(255,255,255,.06);--br2:rgba(255,255,255,.11);
+  --ok:#10b981;--warn:#f59e0b;--err:#ef4444;--sw:220px;--th:62px;--r:10px;--sh:0 8px 32px rgba(0,0,0,.5);
+}
+[data-theme="light"]{
+  --bg:#eef2f8;--sb:#ffffff;--card:#ffffff;--card2:#f3f6fb;--inp:#ffffff;--hov:#eef2f9;
+  --acc:#2563eb;--acc-h:#1d4ed8;--acc-dim:rgba(37,99,235,.09);--acc-br:rgba(37,99,235,.35);
+  --t1:#0f1b2d;--t2:#49607e;--t3:#93a2ba;--br:rgba(15,27,45,.09);--br2:rgba(15,27,45,.15);
+  --ok:#059669;--warn:#d97706;--err:#dc2626;--sh:0 8px 28px rgba(15,27,45,.10);
+}
+[data-theme="light"] .bpend,[data-theme="light"] .balta{background:rgba(220,38,38,.11);color:#b91c1c}
+[data-theme="light"] .bprog{background:rgba(37,99,235,.11);color:#1d4ed8}
+[data-theme="light"] .bdone,[data-theme="light"] .bbai{background:rgba(5,150,105,.12);color:#047857}
+[data-theme="light"] .bmed{background:rgba(217,119,6,.13);color:#92400e}
+[data-theme="light"] .ssel.pendente{background:rgba(220,38,38,.11);color:#b91c1c}
+[data-theme="light"] .ssel.em_andamento{background:rgba(37,99,235,.11);color:#1d4ed8}
+[data-theme="light"] .ssel.concluido{background:rgba(5,150,105,.12);color:#047857}
+[data-theme="light"] .tok{background:rgba(5,150,105,.12);color:#047857}
+[data-theme="light"] .terr{background:rgba(220,38,38,.11);color:#b91c1c}
+[data-theme="light"] .tinf{color:#1d4ed8}
+[data-theme="light"] .lc{box-shadow:var(--sh)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{height:100%}
+body{min-height:100vh;background:var(--bg);color:var(--t1);
+     font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+     font-size:14px;line-height:1.5;overflow-x:hidden;transition:background .2s,color .2s}
+a{text-decoration:none;color:inherit}
+button{cursor:pointer;border:none;background:none;font-family:inherit;font-size:inherit;color:inherit}
+input,textarea,select{font-family:inherit;font-size:inherit;color:var(--t1)}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--acc-br);border-radius:4px}
+.ico{width:1em;height:1em;display:inline-block;vertical-align:-0.14em;flex-shrink:0;fill:none;
+     stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+.demobar{position:fixed;top:0;left:0;right:0;z-index:2000;background:linear-gradient(90deg,var(--acc),#7c3aed);
+  color:#fff;font-size:11.5px;font-weight:600;text-align:center;padding:5px 10px;letter-spacing:.2px}
+
+/* LOGIN */
+.lp{display:flex;align-items:center;justify-content:center;min-height:100vh;padding-top:26px;
+    background:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(37,99,235,.18),transparent),var(--bg)}
+.lc{width:100%;max-width:420px;background:var(--card);border:1px solid var(--br2);
+    border-radius:16px;padding:40px;box-shadow:var(--sh);margin:20px}
+.ll{display:flex;align-items:center;justify-content:center;gap:10px;
+    font-size:22px;font-weight:700;margin-bottom:22px}
+.ll .lb{width:36px;height:36px;background:var(--acc);border-radius:9px;
+        display:flex;align-items:center;justify-content:center}
+.lh{text-align:center;margin-bottom:26px}
+.lh h2{font-size:20px;font-weight:700;margin-bottom:5px}
+.lh p{font-size:13px;color:var(--t2)}
+.at{display:flex;background:var(--inp);border-radius:9px;padding:4px;margin-bottom:24px;gap:4px}
+.at-btn{flex:1;padding:8px;border-radius:7px;font-size:13px;font-weight:500;color:var(--t2);transition:all .2s}
+.at-btn.on{background:var(--acc);color:#fff}
+.at-btn:hover:not(.on){color:var(--t1)}
+.fs{display:none}.fs.on{display:block}
+.fg{margin-bottom:14px}
+.fg label{display:block;font-size:11px;font-weight:600;text-transform:uppercase;
+          letter-spacing:.5px;color:var(--t3);margin-bottom:6px}
+.iw{position:relative;display:flex;align-items:center}
+.iw i,.iw .ico{position:absolute;left:12px;color:var(--t3);font-size:13px;pointer-events:none}
+.iw input{width:100%;padding:10px 12px 10px 36px;background:var(--inp);
+          border:1px solid var(--br);border-radius:8px;outline:none;transition:border-color .2s}
+.iw input:focus{border-color:var(--acc-br)}
+.iw input::placeholder{color:var(--t3)}
+.em{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:#fca5a5;
+    border-radius:8px;padding:10px 12px;font-size:13px;margin-bottom:14px;display:none}
+.demohint{background:var(--acc-dim);border:1px solid var(--acc-br);color:var(--acc);
+    border-radius:8px;padding:9px 12px;font-size:11.5px;margin-bottom:16px;text-align:center;line-height:1.5}
+
+/* olho para mostrar/ocultar senha */
+.iw input[type="password"],.iw input[type="text"].pwfield{padding-right:38px}
+.pweye{position:absolute;right:8px;top:50%;transform:translateY(-50%);color:var(--t3);
+       cursor:pointer;width:26px;height:26px;padding:0;display:flex;align-items:center;justify-content:center;
+       border-radius:6px;transition:all .15s;z-index:5}
+.pweye:hover{color:var(--t1);background:var(--hov)}
+.pweye svg{width:16px;height:16px;pointer-events:none}
+
+/* seletor de duas opções (claro/escuro, notificações on/off) — no mesmo estilo de abas do resto do app */
+.optgrid{display:flex;background:var(--card);padding:4px;border-radius:9px;border:1px solid var(--br);gap:3px}
+.optbtn{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:9px 10px;
+        border-radius:7px;cursor:pointer;border:none;background:transparent;transition:all .2s}
+.optbtn i,.optbtn .ico{font-size:13px;color:var(--t2);transition:color .2s}
+.optbtn span{font-size:13px;font-weight:500;color:var(--t2);transition:color .2s}
+.optbtn:hover:not(.sel){background:var(--hov)}
+.optbtn.sel{background:var(--acc)}
+.optbtn.sel i,.optbtn.sel .ico,.optbtn.sel span{color:#fff}
+
+/* comparação de benefícios nos planos */
+.plan li.no{color:var(--t3)}
+.plan li.no i,.plan li.no .ico{color:var(--t3)}
+.plan li.no span{text-decoration:line-through;text-decoration-color:var(--t3)}
+.plan .pbadgehl{display:inline-block;margin-bottom:8px;padding:2px 9px;border-radius:20px;
+    font-size:10px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;background:rgba(16,185,129,.14);color:var(--ok)}
+
+/* código de convite da equipe */
+.equipeLayout{display:grid;grid-template-columns:270px 1fr;gap:20px;align-items:start}
+.eqcard{background:var(--card);border:1px solid var(--br);border-radius:var(--r);padding:18px;position:sticky;top:calc(var(--th) + 26px)}
+.eqicon{width:38px;height:38px;border-radius:10px;background:var(--acc-dim);color:var(--acc);
+        display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:12px}
+.eqcard h4{font-size:14px;font-weight:700;margin-bottom:4px}
+.eqcard p{font-size:12px;color:var(--t3);line-height:1.5;margin-bottom:14px}
+.invitecode{display:flex;flex-direction:column;gap:8px}
+.invitecode .codeval{display:block;text-align:center;font-family:'Courier New',monospace;font-size:22px;font-weight:800;letter-spacing:4px;
+    color:var(--acc);background:var(--inp);border:1px dashed var(--acc-br);border-radius:8px;padding:10px 8px}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
+     padding:9px 18px;border-radius:8px;font-weight:500;transition:all .2s;
+     cursor:pointer;white-space:nowrap}
+.bp{background:var(--acc);color:#fff}
+.bp:hover{background:var(--acc-h)}
+.bp:active{transform:scale(.98)}
+.bfull{width:100%}
+.bg{background:var(--card2);border:1px solid var(--br2);color:var(--t2);padding:7px 14px;font-size:13px}
+.bg:hover{background:var(--hov);color:var(--t1)}
+.bdg{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);
+     color:#fca5a5;padding:7px 14px;font-size:13px}
+.bdg:hover{background:rgba(239,68,68,.18)}
+.bsm{padding:6px 12px;font-size:12px;border-radius:7px}
+.bico{width:32px;height:32px;border-radius:7px;display:inline-flex;
+      align-items:center;justify-content:center;color:var(--t2);transition:all .2s}
+.bico:hover{background:var(--hov);color:var(--t1)}
+.bico.del:hover{color:var(--err)}
+
+/* APP SHELL */
+.app{display:flex;min-height:100vh;padding-top:26px}
+.sidebar{width:var(--sw);background:var(--sb);border-right:1px solid var(--br);
+         display:flex;flex-direction:column;padding:18px 12px;
+         position:fixed;top:26px;left:0;height:calc(100vh - 26px);z-index:100;overflow-y:auto}
+.slogo{display:flex;align-items:center;gap:10px;padding:0 6px;margin-bottom:18px;
+       font-size:17px;font-weight:700}
+.slogo .lb{width:30px;height:30px;background:var(--acc);border-radius:7px;
+           display:flex;align-items:center;justify-content:center;font-size:15px}
+.bnew{display:flex;align-items:center;gap:8px;width:100%;padding:9px 13px;
+      background:var(--acc);color:#fff;border-radius:8px;font-size:13px;
+      font-weight:500;margin-bottom:22px;transition:background .2s}
+.bnew:hover{background:var(--acc-h)}
+.snav{display:flex;flex-direction:column;gap:2px;flex:1}
+.slink{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;
+       color:var(--t2);font-size:13px;font-weight:500;transition:all .2s}
+.slink:hover{background:var(--hov);color:var(--t1)}
+.slink.on{background:var(--acc-dim);color:var(--acc);border:1px solid var(--acc-br)}
+.slink i,.slink .ico{width:15px;text-align:center;font-size:14px}
+.widget{margin-top:auto;padding-top:18px;border-top:1px solid var(--br)}
+.wtitle{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;
+        color:var(--t3);margin-bottom:12px}
+.wbody{display:flex;align-items:center;gap:12px}
+.rwrap{position:relative;flex-shrink:0;width:64px;height:64px}
+.pring{transform:rotate(-90deg)}
+.rbg{fill:none;stroke:rgba(255,255,255,.07);stroke-width:5}
+.rfill{fill:none;stroke:var(--acc);stroke-width:5;stroke-linecap:round;
+       stroke-dasharray:163.4;stroke-dashoffset:163.4;transition:stroke-dashoffset .9s ease}
+.rpct{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+      font-size:11px;font-weight:700}
+.winfo .wlabel{font-size:12px;font-weight:600;margin-bottom:2px}
+.winfo .wsub{font-size:11px;color:var(--t3);margin-bottom:5px}
+.winfo .wlink{font-size:11px;color:var(--acc);font-weight:500;cursor:pointer}
+.main{margin-left:var(--sw);flex:1;display:flex;flex-direction:column;min-height:calc(100vh - 26px)}
+.topbar{height:var(--th);background:var(--sb);border-bottom:1px solid var(--br);
+        display:flex;align-items:center;padding:0 24px;gap:14px;
+        position:sticky;top:26px;z-index:50}
+.sbox{flex:1;max-width:380px;position:relative}
+.sbox .si{position:absolute;left:11px;top:50%;transform:translateY(-50%);
+          color:var(--t3);font-size:13px;pointer-events:none}
+.sinp{width:100%;padding:8px 11px 8px 34px;background:var(--inp);border:1px solid var(--br);
+      border-radius:8px;outline:none;font-size:13px;transition:border-color .2s}
+.sinp:focus{border-color:var(--acc-br)}
+.sinp::placeholder{color:var(--t3)}
+.tbr{display:flex;align-items:center;gap:8px;margin-left:auto;position:relative}
+.tico{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;
+      justify-content:center;color:var(--t2);transition:all .2s;position:relative}
+.tico:hover{background:var(--hov);color:var(--t1)}
+.uav{width:34px;height:34px;border-radius:50%;background:var(--acc);color:#fff;
+     display:flex;align-items:center;justify-content:center;font-weight:700;
+     font-size:14px;cursor:pointer;user-select:none;flex-shrink:0}
+.unl{font-size:13px;font-weight:500;cursor:pointer}
+.udrop{position:absolute;top:calc(100% + 8px);right:0;background:var(--card);
+       border:1px solid var(--br2);border-radius:10px;box-shadow:var(--sh);
+       min-width:176px;overflow:hidden;z-index:300;display:none}
+.udrop.on{display:block}
+.uddh{padding:14px 16px;border-bottom:1px solid var(--br)}
+.uddh .udn{font-size:14px;font-weight:600}
+.uddh .ude{font-size:11px;color:var(--t3)}
+.udrop a{display:flex;align-items:center;gap:10px;padding:10px 16px;
+         font-size:13px;color:var(--t2);transition:all .15s;cursor:pointer}
+.udrop a:hover{background:var(--hov);color:var(--t1)}
+.udrop a.danger:hover{color:var(--err)}
+.nbadge{position:absolute;top:2px;right:2px;min-width:15px;height:15px;padding:0 3px;
+        background:var(--err);color:#fff;font-size:9px;font-weight:700;border-radius:20px;
+        display:none;align-items:center;justify-content:center;border:2px solid var(--sb)}
+.nbadge.on{display:flex}
+.ndrop{position:absolute;top:calc(100% + 8px);right:0;background:var(--card);
+       border:1px solid var(--br2);border-radius:10px;box-shadow:var(--sh);
+       min-width:300px;max-width:340px;max-height:380px;overflow:hidden;z-index:300;display:none;flex-direction:column}
+.ndrop.on{display:flex}
+.ndh{padding:12px 16px;border-bottom:1px solid var(--br);display:flex;align-items:center;justify-content:space-between}
+.ndh .ndt{font-size:13px;font-weight:700}
+.ndh .ndmark{font-size:11px;color:var(--acc);cursor:pointer}
+.ndbody{overflow-y:auto;max-height:320px}
+.ndi{display:flex;gap:10px;padding:11px 16px;border-bottom:1px solid var(--br)}
+.ndi:last-child{border-bottom:none}
+.ndi.unread{background:var(--acc-dim)}
+.ndic{width:30px;height:30px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;
+     justify-content:center;font-size:12px;background:var(--acc-dim);color:var(--acc)}
+.ndtt{font-size:12.5px;font-weight:600}
+.ndms{font-size:11.5px;color:var(--t2);margin-top:1px}
+.ndtm{font-size:10px;color:var(--t3);margin-top:3px}
+.page{padding:26px;flex:1}
+.ph{margin-bottom:22px}
+.ph h1{font-size:21px;font-weight:700}
+.ph p{font-size:13px;color:var(--t2);margin-top:3px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+.sc{background:var(--card);border:1px solid var(--br);border-radius:var(--r);
+    padding:16px 18px;display:flex;align-items:center;gap:13px;transition:border-color .2s}
+.sc:hover{border-color:var(--br2)}
+.sci{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;
+     justify-content:center;font-size:17px;flex-shrink:0}
+.sci.bl{background:rgba(37,99,235,.14);color:#60a5fa}
+.sci.am{background:rgba(245,158,11,.14);color:#fbbf24}
+.sci.vi{background:rgba(139,92,246,.14);color:#a78bfa}
+.sci.gr{background:rgba(16,185,129,.14);color:#34d399}
+.scv{font-size:28px;font-weight:700;line-height:1;margin-bottom:1px}
+.scl{font-size:12px;color:var(--t2)}
+.dlayout{display:grid;grid-template-columns:1fr 310px;gap:22px}
+.dleft{display:flex;flex-direction:column;gap:18px}
+.ccard{background:var(--card);border:1px solid var(--br);border-radius:var(--r);padding:20px}
+.ccard h3{font-size:14px;font-weight:700;margin-bottom:16px}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ff{margin-bottom:12px}
+.ff label{display:block;font-size:10px;font-weight:700;text-transform:uppercase;
+          letter-spacing:.6px;color:var(--t3);margin-bottom:5px}
+.ff input,.ff select,.ff textarea{
+  width:100%;padding:8px 11px;background:var(--inp);border:1px solid var(--br);
+  border-radius:8px;outline:none;transition:border-color .2s}
+.ff input:focus,.ff select:focus,.ff textarea:focus{border-color:var(--acc-br)}
+.ff input::placeholder,.ff textarea::placeholder{color:var(--t3)}
+.ff select option{background:var(--card)}
+.ff textarea{resize:vertical;min-height:72px}
+.cfooter{display:flex;justify-content:flex-end;margin-top:4px}
+.sech{display:flex;align-items:center;justify-content:space-between;margin-bottom:13px}
+.sect{font-size:14px;font-weight:700}
+.secl{font-size:12px;color:var(--acc);cursor:pointer}
+.tcards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.tc{background:var(--card2);border:1px solid var(--br);border-radius:var(--r);
+    padding:13px 14px;transition:border-color .2s,transform .15s}
+.tc:hover{border-color:var(--br2);transform:translateY(-1px)}
+.tch{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px}
+.tcn{font-size:13px;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tcd{font-size:11px;color:var(--t2);margin-bottom:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tcf{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.aipanel{background:var(--card);border:1px solid var(--br);border-radius:var(--r);
+         display:flex;flex-direction:column;height:calc(100vh - var(--th) - 78px);
+         position:sticky;top:calc(var(--th) + 52px);overflow:hidden}
+.aihead{padding:14px 18px;border-bottom:1px solid var(--br);display:flex;align-items:center;gap:10px}
+.aiico{width:30px;height:30px;background:var(--acc-dim);border-radius:8px;
+       display:flex;align-items:center;justify-content:center;color:var(--acc)}
+.ait{font-size:14px;font-weight:700}
+.ais{font-size:11px;color:var(--t3)}
+.aimsgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:11px}
+.aim{display:flex;gap:8px;align-items:flex-start;max-width:100%}
+.um{display:flex;flex-direction:row-reverse;gap:8px;align-items:flex-start;max-width:100%}
+.mav{width:28px;height:28px;border-radius:50%;flex-shrink:0;
+     display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-top:2px}
+.mav.ai{background:var(--acc-dim);color:var(--acc)}
+.mav.u{background:var(--acc);color:#fff}
+.aim .mbody{display:flex;flex-direction:column;align-items:flex-start;max-width:calc(100% - 40px)}
+.um .mbody{display:flex;flex-direction:column;align-items:flex-end;max-width:calc(100% - 40px)}
+.bub{padding:10px 14px;border-radius:14px;font-size:13px;line-height:1.6;
+     word-break:break-word;display:inline-block;max-width:100%}
+.aim .bub{background:var(--card2);border:1px solid var(--br);border-radius:4px 14px 14px 14px;color:var(--t1)}
+.um .bub{background:var(--acc);color:#fff;border-radius:14px 4px 14px 14px}
+.mt{font-size:10px;color:var(--t3);margin-top:4px;display:block;padding:0 2px}
+.um .mt{text-align:right}
+.typing{display:flex;gap:4px;align-items:center;padding:9px 12px;
+        background:var(--card2);border:1px solid var(--br);border-radius:4px 14px 14px 14px;width:52px}
+.dot{width:6px;height:6px;background:var(--t3);border-radius:50%;animation:tp 1.2s infinite}
+.dot:nth-child(2){animation-delay:.2s}
+.dot:nth-child(3){animation-delay:.4s}
+@keyframes tp{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-4px)}}
+.aiinp{padding:12px 14px;border-top:1px solid var(--br);display:flex;gap:8px}
+.aiinp input{flex:1;padding:8px 11px;background:var(--inp);border:1px solid var(--br);
+             border-radius:8px;outline:none;font-size:13px;transition:border-color .2s}
+.aiinp input:focus{border-color:var(--acc-br)}
+.sbtn{width:34px;height:34px;background:var(--acc);color:#fff;border-radius:8px;
+      display:flex;align-items:center;justify-content:center;transition:background .2s;flex-shrink:0}
+.sbtn:hover{background:var(--acc-h)}
+.ttop{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;gap:12px;flex-wrap:wrap}
+.tabs{display:flex;gap:3px;background:var(--card);padding:4px;border-radius:9px;border:1px solid var(--br)}
+.tb{padding:6px 14px;border-radius:7px;font-size:13px;font-weight:500;color:var(--t2);transition:all .2s}
+.tb.on{background:var(--acc);color:#fff}
+.tb:hover:not(.on){color:var(--t1);background:var(--hov)}
+.tools{display:flex;align-items:center;gap:8px}
+.twrap{background:var(--card);border:1px solid var(--br);border-radius:var(--r);overflow:auto}
+.bbar{display:flex;align-items:center;gap:10px;padding:9px 16px;
+      background:var(--acc-dim);border-bottom:1px solid var(--acc-br);display:none}
+.bbar.on{display:flex}
+.binfo{font-size:13px;flex:1}
+table{width:100%;border-collapse:collapse}
+th{padding:11px 14px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;
+   letter-spacing:.5px;color:var(--t3);background:var(--card);border-bottom:1px solid var(--br)}
+.thcb{width:40px}.that{width:74px}
+tr.tr{border-bottom:1px solid var(--br);transition:background .15s}
+tr.tr:last-child{border-bottom:none}
+tr.tr:hover{background:var(--hov)}
+tr.tr.sel{background:var(--acc-dim)}
+td{padding:11px 14px;vertical-align:middle}
+.cbc{width:40px}
+.tcb{width:16px;height:16px;border-radius:4px;cursor:pointer;appearance:none;-webkit-appearance:none;
+     background:var(--inp);border:1px solid var(--br2);transition:all .15s;position:relative}
+.tcb:checked{background:var(--acc);border-color:var(--acc)}
+.tcb:checked::after{content:'✓';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;font-size:10px}
+.tname{font-size:13px;font-weight:500;cursor:pointer}
+.tdesc{font-size:11px;color:var(--t3);margin-top:1px}
+.psel{background:var(--inp);border:1px solid var(--br);border-radius:6px;padding:3px 6px;font-size:12px;outline:none;cursor:pointer}
+.psel option{background:var(--card)}
+.dltext{font-size:13px;color:var(--t2);cursor:pointer}
+.dltext:hover{color:var(--acc);text-decoration:underline}
+.ssel{padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500;border:none;outline:none;cursor:pointer;appearance:none;-webkit-appearance:none}
+.ssel.pendente{background:rgba(239,68,68,.15);color:#fca5a5}
+.ssel.em_andamento{background:rgba(59,130,246,.15);color:#93c5fd}
+.ssel.concluido{background:rgba(16,185,129,.15);color:#6ee7b7}
+.ssel option{background:var(--card);color:var(--t1)}
+.rats{display:flex;align-items:center;gap:3px}
+.empty{padding:60px 20px;text-align:center}
+.empty i,.empty .ico{font-size:38px;color:var(--t3);display:block;margin-bottom:10px}
+.empty p{color:var(--t2);font-size:14px}
+.badge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500}
+.bpend{background:rgba(239,68,68,.15);color:#fca5a5}
+.bprog{background:rgba(59,130,246,.15);color:#93c5fd}
+.bdone{background:rgba(16,185,129,.15);color:#6ee7b7}
+.balta{background:rgba(239,68,68,.15);color:#fca5a5}
+.bmed{background:rgba(245,158,11,.15);color:#fde68a}
+.bbai{background:rgba(16,185,129,.15);color:#6ee7b7}
+.chatwrap{display:grid;grid-template-columns:230px 1fr;gap:18px;height:calc(100vh - var(--th) - 78px)}
+.convlist{background:var(--card);border:1px solid var(--br);border-radius:var(--r);display:flex;flex-direction:column;overflow:hidden}
+.convnew{margin:12px;padding:9px 12px;background:var(--acc);color:#fff;border-radius:8px;
+         display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;font-weight:600;transition:background .2s}
+.convnew:hover{background:var(--acc-h)}
+.convitems{flex:1;overflow-y:auto;padding:0 8px 8px}
+.convi{padding:10px 11px;border-radius:8px;cursor:pointer;margin-bottom:3px;transition:all .15s;display:flex;align-items:center;gap:9px}
+.convi:hover{background:var(--hov)}
+.convi.on{background:var(--acc-dim);color:var(--acc)}
+.convi .cvt{flex:1;min-width:0;font-size:12.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.convi .cvdel{opacity:0;font-size:11px;color:var(--t3);padding:4px;flex-shrink:0}
+.convi:hover .cvdel{opacity:1}
+.convi .cvdel:hover{color:var(--err)}
+.chatmain{background:var(--card);border:1px solid var(--br);border-radius:var(--r);display:flex;flex-direction:column;overflow:hidden}
+.empgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
+.empcard{background:var(--card);border:1px solid var(--br);border-radius:var(--r);padding:16px}
+.emphead{display:flex;align-items:center;gap:11px;margin-bottom:12px}
+.empav{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:15px;flex-shrink:0}
+.empn{font-size:13.5px;font-weight:700}
+.empr{font-size:11px;color:var(--t3)}
+.empbar{height:6px;background:var(--inp);border-radius:20px;overflow:hidden;margin:10px 0 8px}
+.empbarf{height:100%;background:var(--ok);border-radius:20px;transition:width .5s}
+.empstats{display:flex;justify-content:space-between;font-size:11px;color:var(--t2)}
+.eqdiv{display:flex;align-items:center;gap:10px;margin:14px 0;color:var(--t3);font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+.eqdiv::before,.eqdiv::after{content:'';flex:1;height:1px;background:var(--br)}
+.actwrap{margin-top:10px;padding-top:10px;border-top:1px solid var(--br)}
+.actlink{cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.actlink .ico{font-size:10px;transition:transform .2s;transform:rotate(0deg)}
+.actlist{margin-top:8px;display:flex;flex-direction:column;gap:6px;max-height:160px;overflow-y:auto}
+.actrow{display:flex;align-items:center;gap:6px;font-size:11.5px;padding:6px 8px;background:var(--inp);border-radius:7px}
+.actn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--t2)}
+.actempty{font-size:11.5px;color:var(--t3);padding:6px 2px;text-align:center}
+.empdel{margin-left:auto;color:var(--t3);width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.empdel:hover{background:rgba(239,68,68,.12);color:var(--err)}
+.plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:18px;margin-top:6px}
+.plan{background:var(--card);border:1px solid var(--br);border-radius:14px;padding:24px;position:relative;display:flex;flex-direction:column}
+.plan.hl{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
+.plan .ptag{position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:var(--acc);color:#fff;font-size:10.5px;font-weight:700;padding:3px 12px;border-radius:20px}
+.planicon{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:14px}
+.planicon.basico{background:var(--card2);color:var(--t2);border:1px solid var(--br2)}
+.planicon.pessoal{background:var(--acc-dim);color:var(--acc)}
+.planicon.empresarial{background:rgba(124,58,237,.14);color:#a78bfa}
+.plan h3{font-size:16px;font-weight:700;margin-bottom:4px}
+.plan .pdesc{font-size:12px;color:var(--t3);margin-bottom:14px}
+.plan .pprice{font-size:26px;font-weight:800;margin-bottom:4px}
+.pcycnote{font-size:11.5px;color:var(--ok);margin-bottom:14px;font-weight:600}
+.cycletog{display:flex;background:var(--card2);border:1px solid var(--br);border-radius:9px;padding:3px;gap:3px}
+.cyc-opt{flex:1;padding:7px 8px;border-radius:7px;font-size:12px;font-weight:700;color:var(--t2);
+         display:flex;align-items:center;justify-content:center;gap:5px;transition:all .15s;cursor:pointer;border:none;background:none;font-family:inherit}
+.cyc-opt.on{background:var(--acc);color:#fff}
+.cyc-badge{font-size:9.5px;font-weight:800;background:rgba(16,185,129,.18);color:var(--ok);padding:1px 5px;border-radius:5px}
+.cyc-opt.on .cyc-badge{background:rgba(255,255,255,.22);color:#fff}
+.plan .pprice span{font-size:12px;font-weight:500;color:var(--t3)}
+.pprice .pold{text-decoration:line-through;font-weight:600;font-size:16px;margin-right:8px;vertical-align:middle}
+.pprice .pnew{color:var(--t1);font-size:26px;font-weight:800}
+.plan ul{list-style:none;margin-bottom:18px;flex:1}
+.plan li{display:flex;align-items:flex-start;gap:9px;font-size:12.5px;color:var(--t2);margin-bottom:10px;line-height:1.4}
+.plan li i,.plan li .ico{color:var(--ok);margin-top:2px;flex-shrink:0}
+.demonote{margin-top:14px;padding:10px 12px;background:var(--acc-dim);border-radius:8px;font-size:11px;color:var(--acc);text-align:center;line-height:1.5}
+.clayout{display:grid;grid-template-columns:190px 1fr;gap:22px}
+.cnav{background:var(--card);border:1px solid var(--br);border-radius:var(--r);padding:8px;height:fit-content}
+.cni{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;color:var(--t2);font-size:13px;font-weight:500;cursor:pointer;transition:all .2s}
+.cni:hover{background:var(--hov);color:var(--t1)}
+.cni.on{background:var(--acc-dim);color:var(--acc)}
+.cni i,.cni .ico{width:15px;text-align:center;font-size:13px}
+.cpanel{display:none}.cpanel.on{display:block}
+.lgpd{background:var(--card2);border:1px solid var(--acc-br);border-radius:var(--r);padding:18px;margin-bottom:16px}
+.lgpdt{font-size:14px;font-weight:700;color:var(--acc);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.lgpdb{font-size:13px;color:var(--t2);line-height:1.7}
+.lgpdb p{margin-bottom:8px}
+.lgpdb p:last-child{margin-bottom:0}
+.delbox{background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.22);border-radius:var(--r);padding:20px}
+.delt{font-size:14px;font-weight:700;color:#fca5a5;margin-bottom:6px}
+.deld{font-size:13px;color:var(--t2);margin-bottom:16px}
+.secgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+.secbox{background:var(--card2);border:1px solid var(--br);border-radius:var(--r);padding:14px;text-align:center}
+.secbox .ico{font-size:20px;margin-bottom:8px;display:block;margin-left:auto;margin-right:auto}
+.secbox .sbt{font-size:12px;font-weight:600}
+.secbox .sbs{font-size:11px;color:var(--t3);margin-top:3px}
+.avbtns{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.colorpicks{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.cpick{width:26px;height:26px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .15s}
+.cpick.sel{border-color:var(--t1);transform:scale(1.12)}
+.thgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.thopt{display:flex;flex-direction:column;align-items:center;gap:2px;padding:16px;
+       border-radius:var(--r);cursor:pointer;border:2px solid var(--br);background:var(--card2);
+       transition:all .2s;text-align:center}
+.thopt.sel{border-color:var(--acc);background:var(--acc-dim)}
+.thopt .ico{font-size:20px;color:var(--t2);margin-bottom:6px;width:20px;height:20px}
+.thopt.sel .ico{color:var(--acc)}
+.notifrow{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;
+          background:var(--card2);border:1px solid var(--br);border-radius:var(--r)}
+.miniswitch{width:40px;height:22px;background:var(--inp);border:1px solid var(--br2);border-radius:22px;
+            cursor:pointer;flex-shrink:0;position:relative;transition:background .2s}
+.miniswitch .msk{position:absolute;top:1px;left:1px;width:18px;height:18px;border-radius:50%;
+                  background:#fff;transition:left .2s}
+.miniswitch.on{background:var(--acc);border-color:var(--acc)}
+.miniswitch.on .msk{left:19px}
+.csec{background:var(--card);border:1px solid var(--br);border-radius:var(--r);padding:22px;margin-bottom:18px}
+.cst{font-size:15px;font-weight:700;margin-bottom:4px}
+.csd{font-size:13px;color:var(--t2);margin-bottom:18px}
+.cftr{display:flex;justify-content:flex-end;margin-top:14px}
+.avbig{width:78px;height:78px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:#fff}
+.avupwrap{display:flex;align-items:center;gap:18px;margin-bottom:20px;flex-wrap:wrap}
+.plchip{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:700;letter-spacing:.3px;text-transform:uppercase}
+.plchip.comum{background:var(--acc-dim);color:var(--acc)}
+.plchip.corp{background:rgba(124,58,237,.14);color:#a78bfa}
+.plchip.pro{background:rgba(16,185,129,.14);color:var(--ok)}
+.thtog{width:52px;height:30px;border-radius:20px;background:var(--inp);border:1px solid var(--br2);position:relative;flex-shrink:0;transition:background .2s}
+.thtog .thk{position:absolute;top:2px;left:2px;width:24px;height:24px;border-radius:50%;background:var(--acc);color:#fff;
+            display:flex;align-items:center;justify-content:center;font-size:11px;transition:left .25s cubic-bezier(.4,0,.2,1)}
+[data-theme="light"] .thtog .thk{left:24px}
+.thsw{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 16px;background:var(--card2);border:1px solid var(--br);border-radius:var(--r)}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:1000;padding:20px}
+.ov.on{display:flex}
+.modal{background:var(--card);border:1px solid var(--br2);border-radius:14px;padding:26px;width:100%;max-width:420px;box-shadow:var(--sh)}
+.mtitle{font-size:16px;font-weight:700;margin-bottom:5px}
+.mdesc{font-size:13px;color:var(--t2);margin-bottom:18px}
+.mfoot{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
+.minp{width:100%;padding:8px 11px;background:var(--inp);border:1px solid var(--br);border-radius:8px;outline:none;margin-bottom:8px;transition:border-color .2s}
+.minp:focus{border-color:var(--acc-br)}
+#toasts{position:fixed;bottom:22px;right:22px;display:flex;flex-direction:column;gap:8px;z-index:9999}
+.toast{padding:11px 16px;border-radius:9px;font-size:13px;font-weight:500;display:flex;align-items:center;gap:10px;box-shadow:var(--sh);animation:tin .3s ease;min-width:200px}
+.tok{background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);color:#6ee7b7}
+.terr{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:#fca5a5}
+.tinf{background:var(--acc-dim);border:1px solid var(--acc-br);color:#93c5fd}
+@keyframes tin{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+.spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.25);border-top-color:#fff;border-radius:50%;animation:rot .6s linear infinite;display:inline-block}
+@keyframes rot{to{transform:rotate(360deg)}}
+.acctype{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.acard{border:2px solid var(--br);background:var(--inp);border-radius:10px;padding:13px 10px;text-align:center;cursor:pointer;transition:all .2s}
+.acard i,.acard .ico{font-size:18px;color:var(--t2);display:block;margin-bottom:6px}
+.acard .an{font-size:12.5px;font-weight:700}
+.acard .ad{font-size:10.5px;color:var(--t3);margin-top:2px;line-height:1.4}
+.acard.sel{border-color:var(--acc);background:var(--acc-dim)}
+.acard.sel i,.acard.sel .ico,.acard.sel .an{color:var(--acc)}
+.hidden{display:none !important}
+abbr[title]{text-decoration:underline dotted;text-decoration-color:var(--t3);cursor:help}
+@media(max-width:1100px){.dlayout{grid-template-columns:1fr}.aipanel{position:static;height:420px}
+  .stats{grid-template-columns:repeat(2,1fr)}.tcards{grid-template-columns:repeat(2,1fr)}
+  .clayout{grid-template-columns:1fr}.chatwrap{grid-template-columns:1fr}.equipeLayout{grid-template-columns:1fr}}
+@media(max-width:700px){:root{--sw:58px}
+  .slogo span,.bnew span,.slink span,.winfo{display:none}
+  .bnew{justify-content:center;padding:9px}
+  .tcards{grid-template-columns:1fr}}
+@media(max-width:480px){.page{padding:12px}.plans{grid-template-columns:1fr}}
+
+/* ═══ ACESSIBILIDADE (visual e auditiva) ═══ */
+.skip-link{position:fixed;top:-60px;left:10px;z-index:99999;background:var(--acc);color:#fff;
+  padding:10px 16px;border-radius:8px;font-size:13px;font-weight:700;transition:top .15s ease}
+.skip-link:focus{top:10px}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-visible{
+  outline:3px solid #2563eb !important;outline-offset:2px !important;border-radius:4px}
+[data-a11y-contrast="on"]{
+  --bg:#000 !important;--sb:#000 !important;--card:#000 !important;--card2:#0a0a0a !important;--inp:#000 !important;--hov:#1a1a1a !important;
+  --acc:#ffd500 !important;--acc-h:#ffe14d !important;--acc-dim:rgba(255,213,0,.2) !important;--acc-br:#ffd500 !important;
+  --t1:#fff !important;--t2:#fff !important;--t3:#e8e8e8 !important;--br:#fff !important;--br2:#fff !important;
+  --ok:#00ff6a !important;--warn:#ffd500 !important;--err:#ff5c5c !important}
+[data-a11y-contrast="on"] *:focus-visible{outline:3px solid #ffd500 !important}
+body.a11y-fs-1{zoom:1.12}body.a11y-fs-2{zoom:1.25}body.a11y-fs-3{zoom:1.45}
+body.a11y-underline a{text-decoration:underline !important}
+body.a11y-reduce-motion *,body.a11y-reduce-motion *::before,body.a11y-reduce-motion *::after{
+  animation-duration:.001s !important;transition-duration:.001s !important}
+#a11yBtn{position:fixed;left:18px;bottom:18px;z-index:9990;width:52px;height:52px;border-radius:50%;
+  background:var(--acc);color:#fff;box-shadow:0 6px 20px rgba(0,0,0,.35);display:flex;align-items:center;
+  justify-content:center;font-size:22px;border:2px solid rgba(255,255,255,.25);transition:transform .15s,background .2s;
+  cursor:grab;touch-action:none;user-select:none}
+#a11yBtn:hover{background:var(--acc-h);transform:scale(1.06)}
+#a11yBtn.a11y-dragging{cursor:grabbing;transition:none;transform:scale(1.08);box-shadow:0 10px 28px rgba(0,0,0,.5)}
+body.a11y-no-select{user-select:none;-webkit-user-select:none}
+#a11yPanel{position:fixed;left:18px;bottom:80px;z-index:9991;width:290px;max-width:calc(100vw - 36px);
+  max-height:min(540px,calc(100vh - 110px));overflow-y:auto;background:var(--card);border:1px solid var(--br2);
+  border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.45);padding:16px;display:none}
+#a11yPanel.on{display:block}
+#a11yPanel h2{font-size:14px;font-weight:800;margin-bottom:2px;color:var(--t1)}
+.a11y-sub{font-size:11px;color:var(--t3);margin-bottom:14px}
+.a11y-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid var(--br)}
+.a11y-row:first-of-type{border-top:none}
+.a11y-label{font-size:12.5px;font-weight:600;color:var(--t1)}
+.a11y-desc{font-size:10.5px;color:var(--t3);margin-top:1px}
+.a11y-fsbtns{display:flex;gap:4px}
+.a11y-fsbtns button{width:28px;height:28px;border-radius:6px;background:var(--inp);border:1px solid var(--br);
+  color:var(--t1);font-weight:700;font-size:11px}
+.a11y-fsbtns button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+.a11y-switch{width:40px;height:22px;border-radius:22px;background:var(--inp);border:1px solid var(--br2);
+  position:relative;flex-shrink:0;transition:background .2s}
+.a11y-switch .knob{position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;
+  background:var(--t3);transition:left .18s,background .18s}
+.a11y-switch[aria-checked="true"]{background:var(--acc)}
+.a11y-switch[aria-checked="true"] .knob{left:20px;background:#fff}
+.a11y-readbtn{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:9px 10px;
+  border-radius:8px;background:var(--acc);color:#fff;font-size:12.5px;font-weight:700;margin-top:12px}
+.a11y-readbtn.reading{background:var(--err)}
+.a11y-resetbtn{width:100%;padding:8px 10px;border-radius:8px;background:var(--card2);border:1px solid var(--br2);
+  color:var(--t2);font-size:12px;font-weight:600;margin-top:8px}
+.a11y-close{position:absolute;top:10px;right:10px;width:26px;height:26px;border-radius:7px;color:var(--t3);
+  display:flex;align-items:center;justify-content:center;font-size:13px}
+.a11y-close:hover{background:var(--hov);color:var(--t1)}
+@media(max-width:480px){#a11yBtn{width:48px;height:48px;font-size:19px;left:12px;bottom:12px}
+  #a11yPanel{left:12px;bottom:68px;width:calc(100vw - 24px)}}
+</style>
+</head>
+<body>
+<a href="#mainContent" class="skip-link">Pular para o conteúdo principal</a>
+<div class="demobar"><i class="fa-solid fa-flask" style="margin-right:6px"></i>Prévia interativa do TaskAI — dados de demonstração, nada é enviado para um servidor</div>
+
+<!-- LOGIN / REGISTER -->
+<div class="lp" id="loginView">
+  <div class="lc">
+    <div class="ll"><div class="lb"><i class="fa-solid fa-check-double" style="color:#fff;font-size:16px"></i></div>TaskAI</div>
+    <div class="lh"><h2 id="fTitle">Bem-vindo de volta</h2><p id="fSub">Entre na sua conta para continuar</p></div>
+    <div class="demohint"><i class="fa-solid fa-circle-info"></i> Modo demonstração: qualquer email/senha funciona para "Entrar". Use "Criar conta" para começar do zero.</div>
+    <div class="at">
+      <button class="at-btn on" id="tLogin" onclick="swAuth('login')">Entrar</button>
+      <button class="at-btn" id="tReg" onclick="swAuth('reg')">Criar conta</button>
+    </div>
+    <div class="fs on" id="sLogin">
+      <div class="fg"><label>Email</label><div class="iw"><i class="fa-solid fa-envelope"></i>
+        <input type="email" id="lEmail" placeholder="seu@email.com"></div></div>
+      <div class="fg"><label>Senha</label><div class="iw"><i class="fa-solid fa-lock"></i>
+        <input type="password" id="lPass" placeholder="••••••••">
+        <button type="button" class="pweye" id="lPassEye" onclick="togglePw(this,'lPass')" title="Mostrar senha" aria-label="Mostrar senha"></button></div></div>
+      <div class="em" id="lErr"></div>
+      <button class="btn bp bfull" onclick="doLogin(this)"><span>Entrar</span><i class="fa-solid fa-arrow-right"></i></button>
+    </div>
+    <div class="fs" id="sReg">
+      <div class="fg" style="margin-bottom:16px"><label>Tipo de conta</label>
+        <div class="acctype">
+          <div class="acard sel" id="accComum" onclick="setAcc('comum')"><i class="fa-solid fa-user"></i>
+            <div class="an">Pessoal</div><div class="ad">Uso individual</div></div>
+          <div class="acard" id="accCorp" onclick="setAcc('corporativo')"><i class="fa-solid fa-building"></i>
+            <div class="an">Empresarial</div><div class="ad">Sou o diretor(a)</div></div>
+        </div>
+      </div>
+      <div class="fg"><label>Nome de usuário</label><div class="iw"><i class="fa-solid fa-user"></i>
+        <input type="text" id="rName" placeholder="Seu nome"></div></div>
+      <div class="fg"><label>Email</label><div class="iw"><i class="fa-solid fa-envelope"></i>
+        <input type="email" id="rEmail" placeholder="seu@email.com"></div></div>
+      <div class="fg"><label>Senha <span style="color:var(--t3);text-transform:none;font-weight:400">(mín. 6 caracteres)</span></label>
+        <div class="iw"><i class="fa-solid fa-lock"></i><input type="password" id="rPass" placeholder="••••••••">
+        <button type="button" class="pweye" id="rPassEye" onclick="togglePw(this,'rPass')" title="Mostrar senha" aria-label="Mostrar senha"></button></div></div>
+      <div class="em" id="rErr"></div>
+      <button class="btn bp bfull" onclick="doReg(this)"><span>Criar conta</span><i class="fa-solid fa-user-plus"></i></button>
+    </div>
+  </div>
+</div>
+
+<!-- APP SHELL -->
+<div class="app hidden" id="appShell">
+  <aside class="sidebar">
+    <div class="slogo"><div class="lb"><i class="fa-solid fa-check-double" style="color:#fff;font-size:14px"></i></div><span>TaskAI</span></div>
+    <button class="bnew" onclick="goDash(true)"><i class="fa-solid fa-plus"></i><span>Nova Tarefa</span></button>
+    <nav class="snav">
+      <a class="slink" id="nav-dashboard" onclick="showPage('dashboard')"><i class="fa-solid fa-gauge-high"></i><span>Dashboard</span></a>
+      <a class="slink" id="nav-tasks" onclick="showPage('tasks')"><i class="fa-solid fa-list-check"></i><span>Minhas Tarefas</span></a>
+      <a class="slink" id="nav-chat" onclick="showPage('chat')"><i class="fa-solid fa-comments"></i><span>Chat <abbr title="Inteligência Artificial">IA</abbr></span></a>
+      <a class="slink" id="nav-equipe" onclick="showPage('equipe')"><i class="fa-solid fa-users"></i><span>Equipe</span></a>
+      <a class="slink" id="nav-planos" onclick="showPage('planos')"><i class="fa-solid fa-crown"></i><span>Planos</span></a>
+      <a class="slink" id="nav-settings" onclick="showPage('settings')"><i class="fa-solid fa-gear"></i><span>Configurações</span></a>
+    </nav>
+    <div class="widget">
+      <div class="wtitle">Resumo do dia</div>
+      <div class="wbody">
+        <div class="rwrap"><svg class="pring" width="64" height="64" viewBox="0 0 64 64">
+          <circle class="rbg" cx="32" cy="32" r="26"/><circle class="rfill" cx="32" cy="32" r="26" id="rfill"/></svg>
+          <div class="rpct" id="rpct">0%</div></div>
+        <div class="winfo"><div class="wlabel">Produtividade</div><div class="wsub" id="wsub">—</div>
+          <span class="wlink" onclick="showPage('tasks')">Ver detalhes →</span></div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="sbox"><i class="fa-solid fa-magnifying-glass si"></i>
+        <input class="sinp" id="gsrch" placeholder="Pesquisar tarefas…" onkeydown="if(event.key==='Enter'){showPage('tasks');document.getElementById('tSearch').value=this.value;filterSearch();}">
+      </div>
+      <div class="tbr">
+        <button class="thtog" onclick="toggleTheme()" title="Alternar tema"><span class="thk" id="thk"><i class="fa-solid fa-moon" id="thicon"></i></span></button>
+        <button class="tico" id="bellBtn" onclick="togN(event)" title="Notificações"><i class="fa-solid fa-bell"></i><span class="nbadge" id="nbadge">0</span></button>
+        <div class="ndrop" id="ndrop">
+          <div class="ndh"><span class="ndt">Notificações</span><span class="ndmark" onclick="markAllRead()">Marcar todas como lidas</span></div>
+          <div class="ndbody" id="ndbody"></div>
+        </div>
+        <span class="unl" onclick="togU(event)" id="topUnl"></span>
+        <div class="uav" onclick="togU(event)" id="topAvatar"></div>
+        <div class="udrop" id="udrop">
+          <div class="uddh"><div class="udn" id="ddName"></div><div class="ude" id="ddEmail"></div>
+            <div style="margin-top:8px"><span class="plchip" id="ddType"></span> <span class="plchip pro hidden" id="ddPro">Pro</span></div></div>
+          <a onclick="showPage('settings')"><i class="fa-solid fa-gear"></i> Configurações</a>
+          <a onclick="showPage('planos')"><i class="fa-solid fa-crown"></i> Planos</a>
+          <a class="danger" onclick="doLogout()"><i class="fa-solid fa-right-from-bracket"></i> Sair</a>
+        </div>
+      </div>
+    </header>
+
+    <main class="page" id="mainContent">
+
+      <!-- DASHBOARD -->
+      <div class="pg" id="pg-dashboard">
+        <div class="ph"><h1>Gerenciador de Tarefas com IA</h1><p>Crie tarefas e converse com seu assistente inteligente</p></div>
+        <div class="stats">
+          <div class="sc"><div class="sci bl"><i class="fa-solid fa-layer-group"></i></div><div><div class="scv" id="dT">0</div><div class="scl">Total de tarefas</div></div></div>
+          <div class="sc"><div class="sci am"><i class="fa-solid fa-clock"></i></div><div><div class="scv" id="dP">0</div><div class="scl">Pendentes</div></div></div>
+          <div class="sc"><div class="sci vi"><i class="fa-solid fa-spinner"></i></div><div><div class="scv" id="dE">0</div><div class="scl">Em andamento</div></div></div>
+          <div class="sc"><div class="sci gr"><i class="fa-solid fa-circle-check"></i></div><div><div class="scv" id="dD">0</div><div class="scl">Concluídas</div></div></div>
+        </div>
+        <div class="dlayout">
+          <div class="dleft">
+            <div class="ccard">
+              <h3><i class="fa-solid fa-plus" style="color:var(--acc);margin-right:7px"></i>Nova Tarefa</h3>
+              <div class="ff"><label>Nome da tarefa *</label><input type="text" id="tName" placeholder="Ex.: Finalizar relatório até sexta-feira" maxlength="200"></div>
+              <div class="ff"><label>Descrição</label><textarea id="tDesc" placeholder="Detalhes da tarefa…"></textarea></div>
+              <div class="frow">
+                <div class="ff"><label>Prioridade</label><select id="tPrio">
+                  <option value="alta">🔴 Alta</option><option value="media" selected>🟡 Média</option><option value="baixa">🟢 Baixa</option></select></div>
+                <div class="ff"><label>Prazo</label><input type="date" id="tDl"></div>
+              </div>
+              <div class="ff hidden" id="tEmpWrap"><label>Atribuir a (funcionário)</label>
+                <select id="tEmp"><option value="">— Ninguém (tarefa pessoal) —</option></select></div>
+              <div class="cfooter"><button class="btn bp" onclick="createTask(this)"><i class="fa-solid fa-plus"></i> Criar Tarefa</button></div>
+            </div>
+            <div>
+              <div class="sech"><span class="sect">Tarefas Recentes</span><span class="secl" onclick="showPage('tasks')">Ver todas →</span></div>
+              <div class="tcards" id="rcards"></div>
+            </div>
+          </div>
+          <div class="aipanel">
+            <div class="aihead"><div class="aiico"><i class="fa-solid fa-robot"></i></div>
+              <div style="flex:1"><div class="ait">Assistente <abbr title="Inteligência Artificial">IA</abbr></div><div class="ais">TaskAI · demo</div></div>
+              <span class="bico" onclick="showPage('chat')" title="Ver histórico completo"><i class="fa-solid fa-up-right-and-down-left-from-center"></i></span></div>
+            <div class="aimsgs" id="dashMsgs"></div>
+            <div class="aiinp"><input type="text" id="dashInp" placeholder="Pergunte algo para a IA…" onkeydown="if(event.key==='Enter')sendAI('dash')">
+              <button class="sbtn" onclick="sendAI('dash')"><i class="fa-solid fa-paper-plane"></i></button></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TASKS -->
+      <div class="pg hidden" id="pg-tasks">
+        <div class="ph"><h1>Minhas Tarefas</h1><p id="tasksSub">Gerencie, filtre e organize todas as suas tarefas</p></div>
+        <div class="stats">
+          <div class="sc"><div class="sci bl"><i class="fa-solid fa-layer-group"></i></div><div><div class="scv" id="sT">0</div><div class="scl">Total de tarefas</div></div></div>
+          <div class="sc"><div class="sci am"><i class="fa-solid fa-clock"></i></div><div><div class="scv" id="sP">0</div><div class="scl">Pendentes</div></div></div>
+          <div class="sc"><div class="sci vi"><i class="fa-solid fa-spinner"></i></div><div><div class="scv" id="sE">0</div><div class="scl">Em andamento</div></div></div>
+          <div class="sc"><div class="sci gr"><i class="fa-solid fa-circle-check"></i></div><div><div class="scv" id="sD">0</div><div class="scl">Concluídas</div></div></div>
+        </div>
+        <div class="ttop">
+          <div class="tabs">
+            <button class="tb on" data-s="all" onclick="setTab(this)">Todas</button>
+            <button class="tb" data-s="pendente" onclick="setTab(this)">Pendentes</button>
+            <button class="tb" data-s="em_andamento" onclick="setTab(this)">Em andamento</button>
+            <button class="tb" data-s="concluido" onclick="setTab(this)">Concluídas</button>
+          </div>
+          <div class="tools">
+            <input type="text" id="tSearch" placeholder="Buscar…" oninput="filterSearch()" style="padding:6px 10px;background:var(--inp);border:1px solid var(--br);border-radius:7px;font-size:12.5px;width:140px;outline:none">
+            <select id="sortSel" onchange="renderTasks()" style="padding:6px 10px;background:var(--inp);border:1px solid var(--br);border-radius:7px;font-size:12.5px;outline:none">
+              <option value="newest">Mais recente</option><option value="oldest">Mais antiga</option>
+              <option value="priority_high">Prio. Alta→Baixa</option><option value="priority_low">Prio. Baixa→Alta</option>
+            </select>
+            <button class="btn bg bsm hidden" id="equipeShortcut" onclick="showPage('equipe')"><i class="fa-solid fa-users"></i> Equipe</button>
+          </div>
+        </div>
+        <div class="twrap">
+          <div class="bbar" id="bbar"><input type="checkbox" class="tcb" id="saTop" onchange="togAll(this.checked)">
+            <span class="binfo" id="binfo">0 selecionadas</span>
+            <button class="btn bdg bsm" onclick="confDel()"><i class="fa-solid fa-trash"></i> Excluir selecionadas</button></div>
+          <table><thead><tr>
+            <th class="thcb"><input type="checkbox" class="tcb" id="saHead" onchange="togAll(this.checked)"></th>
+            <th>Tarefa</th><th style="width:110px">Prioridade</th>
+            <th style="width:130px" class="empCol hidden">Funcionário</th>
+            <th style="width:135px">Prazo</th><th style="width:145px">Status</th><th class="that">Ações</th>
+          </tr></thead><tbody id="tbody"></tbody></table>
+        </div>
+      </div>
+
+      <!-- CHAT -->
+      <div class="pg hidden" id="pg-chat">
+        <div class="ph"><h1>Chat com a IA</h1><p>Converse com o assistente, consulte o histórico ou inicie um novo bate-papo</p></div>
+        <div class="chatwrap">
+          <div class="convlist"><div class="convnew" onclick="newConv()"><i class="fa-solid fa-plus"></i> Novo bate-papo</div><div class="convitems" id="convItems"></div></div>
+          <div class="chatmain">
+            <div class="aihead"><div class="aiico"><i class="fa-solid fa-robot"></i></div>
+              <div style="flex:1"><div class="ait" id="convTitle">Nova conversa</div><div class="ais">TaskAI · demo</div></div></div>
+            <div class="aimsgs" id="chatMsgs" style="flex:1"></div>
+            <div class="aiinp"><input type="text" id="chatInp" placeholder="Pergunte algo para a IA…" onkeydown="if(event.key==='Enter')sendAI('chat')">
+              <button class="sbtn" onclick="sendAI('chat')"><i class="fa-solid fa-paper-plane"></i></button></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- EQUIPE -->
+      <div class="pg hidden" id="pg-equipe">
+        <div class="ph"><h1>Minha Equipe</h1><p>Convide funcionários com um código e acompanhe o progresso de cada um</p></div>
+        <div class="equipeLayout">
+          <div id="equipeLeftCol"></div>
+          <div>
+            <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+              <button class="btn bp hidden" id="addEmpBtn" onclick="document.getElementById('addMod').classList.add('on')"><i class="fa-solid fa-user-plus"></i> Adicionar funcionário</button>
+              <span style="font-size:12px;color:var(--t3);align-self:center;margin-left:auto" id="empCount"></span>
+            </div>
+            <div class="empgrid" id="empGrid"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PLANOS -->
+      <div class="pg hidden" id="pg-planos">
+        <div class="ph"><h1>Planos</h1><p>Veja os limites do seu plano atual e conheça as opções disponíveis</p></div>
+        <div class="cycletog" id="cycletogWrap" style="max-width:280px;margin-bottom:18px" role="radiogroup" aria-label="Ciclo de cobrança">
+          <button type="button" class="cyc-opt on" id="cycMensalBtn" role="radio" aria-checked="true" onclick="setBillingCycle('mensal')">Mensal</button>
+          <button type="button" class="cyc-opt" id="cycAnualBtn" role="radio" aria-checked="false" onclick="setBillingCycle('anual')">Anual <span class="cyc-badge">-20%</span></button>
+        </div>
+        <div class="plans" id="plansGrid"></div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div class="pg hidden" id="pg-settings">
+        <div class="ph"><h1>Configurações</h1><p>Gerencie suas preferências e personalize sua experiência</p></div>
+        <div class="clayout">
+          <nav class="cnav">
+            <div class="cni on" id="cni-perfil" onclick="showSetTab('perfil',this)"><i class="fa-solid fa-user"></i> Perfil</div>
+            <div class="cni" id="cni-conta" onclick="showSetTab('conta',this)"><i class="fa-solid fa-lock"></i> Conta</div>
+            <div class="cni" id="cni-notif" onclick="showSetTab('notif',this)"><i class="fa-solid fa-bell"></i> Notificações</div>
+            <div class="cni" id="cni-appear" onclick="showSetTab('appear',this)"><i class="fa-solid fa-sun"></i> Aparência</div>
+            <div class="cni" id="cni-plan" onclick="showSetTab('plan',this)"><i class="fa-solid fa-crown"></i> Plano</div>
+            <div class="cni" id="cni-sec" onclick="showSetTab('sec',this)"><i class="fa-solid fa-triangle-exclamation"></i> Segurança</div>
+          </nav>
+
+          <div>
+            <!-- PERFIL -->
+            <div class="cpanel on" id="panel-perfil">
+              <div class="csec">
+                <div class="cst">Foto de perfil</div>
+                <div class="csd">Envie uma foto do seu dispositivo ou use suas iniciais com uma cor personalizada.</div>
+                <div class="avupwrap">
+                  <div class="avbig" id="avPrev"></div>
+                  <div>
+                    <div class="avbtns">
+                      <label class="btn bg bsm" style="cursor:pointer"><i class="fa-solid fa-envelope"></i> Enviar foto
+                        <input type="file" id="avFile" accept="image/png,image/jpeg,image/webp" style="display:none" onchange="uploadAvatar(this)"></label>
+                      <button class="btn bg bsm hidden" id="btnRemoveAv" onclick="removeAvatar()"><i class="fa-solid fa-trash"></i> Remover foto</button>
+                    </div>
+                    <div style="font-size:11px;color:var(--t3);margin-top:8px">PNG, JPG ou WEBP · até 6MB. Sem foto, usamos a inicial do seu nome.</div>
+                    <div class="colorpicks" id="colorPicks"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="csec">
+                <div class="cst">Nome de exibição</div>
+                <div class="csd">Como seu nome aparece para você e para sua equipe.</div>
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+                  <span class="plchip" id="setType"></span>
+                </div>
+                <div class="ff" style="max-width:360px"><label>Nome de usuário</label><input type="text" id="setNameInp" class="minp" style="margin-bottom:0" oninput="previewName()"></div>
+                <div class="cftr"><button class="btn bp" onclick="saveProfile()"><i class="fa-solid fa-floppy-disk"></i> Salvar alterações</button></div>
+              </div>
+            </div>
+
+            <!-- CONTA (email + senha) -->
+            <div class="cpanel" id="panel-conta">
+              <div class="csec">
+                <div class="cst">Email da conta</div>
+                <div class="csd">Usado para login e comunicações importantes.</div>
+                <div class="ff" style="max-width:360px"><label>Email</label><input type="email" id="setEmailInp" class="minp" style="margin-bottom:0"></div>
+                <div class="cftr"><button class="btn bp" onclick="saveEmail()"><i class="fa-solid fa-floppy-disk"></i> Salvar email</button></div>
+              </div>
+              <div class="csec">
+                <div class="cst">Alterar senha</div>
+                <div class="csd">Mantenha sua conta segura alterando sua senha com regularidade.</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px">
+                  <div class="ff"><label>Senha atual</label><div class="iw"><input type="password" id="pwC" placeholder="••••••••" class="minp" style="margin-bottom:0">
+                    <button type="button" class="pweye" onclick="togglePw(this,'pwC')" title="Mostrar senha"></button></div></div>
+                  <div class="ff"><label>Nova senha</label><div class="iw"><input type="password" id="pwN" placeholder="••••••••" class="minp" style="margin-bottom:0">
+                    <button type="button" class="pweye" onclick="togglePw(this,'pwN')" title="Mostrar senha"></button></div></div>
+                  <div class="ff"><label>Confirmar senha</label><div class="iw"><input type="password" id="pwF" placeholder="••••••••" class="minp" style="margin-bottom:0">
+                    <button type="button" class="pweye" onclick="togglePw(this,'pwF')" title="Mostrar senha"></button></div></div>
+                </div>
+                <div class="em" id="pwErr" style="margin-top:10px"></div>
+                <div class="cftr"><button class="btn bp" onclick="savePw(this)"><i class="fa-solid fa-key"></i> Alterar senha</button></div>
+              </div>
+              <div class="csec">
+                <div class="cst">Sessão</div><div class="csd">Sair da sua conta neste dispositivo.</div>
+                <button class="btn bdg" onclick="doLogout()"><i class="fa-solid fa-right-from-bracket"></i> Sair da conta</button>
+              </div>
+            </div>
+
+            <!-- NOTIFICAÇÕES -->
+            <div class="cpanel" id="panel-notif">
+              <div class="csec">
+                <div class="cst">Notificações</div>
+                <div class="csd">Você recebe avisos sempre que uma tarefa é criada ou muda de status — visíveis no sino no topo da tela.</div>
+                <div class="notifrow">
+                  <div><div style="font-size:13px;font-weight:600">Notificações do sistema</div>
+                    <div style="font-size:12px;color:var(--t3);margin-top:2px" id="notifStatusTxt">Ativadas</div></div>
+                  <div class="miniswitch on" id="notifSwitch" onclick="setNotifications(!DB.user.notificationsEnabled)"><span class="msk"></span></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- APARÊNCIA -->
+            <div class="cpanel" id="panel-appear">
+              <div class="csec">
+                <div class="cst">Aparência</div>
+                <div class="csd">Escolha entre o tema claro e escuro. O azul continua sendo a cor de destaque em ambos.</div>
+                <div class="thgrid">
+                  <div class="thopt theme-opt" data-v="dark" onclick="setTheme('dark')"><i class="fa-solid fa-moon"></i>
+                    <div style="font-size:13px;font-weight:700">Escuro</div><div style="font-size:11px;color:var(--t3)">Padrão · reduz fadiga visual</div></div>
+                  <div class="thopt theme-opt" data-v="light" onclick="setTheme('light')"><i class="fa-solid fa-sun"></i>
+                    <div style="font-size:13px;font-weight:700">Claro</div><div style="font-size:11px;color:var(--t3)">Fundo claro, contraste suave</div></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- PLANO -->
+            <div class="cpanel" id="panel-plan">
+              <div class="csec">
+                <div class="cst">Seu plano atual</div>
+                <div class="csd">Você está na conta <strong id="planAccTxt">—</strong>, plano <strong id="planNameTxt">—</strong>.</div>
+                <button class="btn bp" onclick="showPage('planos')"><i class="fa-solid fa-crown"></i> Ver todos os planos</button>
+              </div>
+            </div>
+
+            <!-- SEGURANÇA -->
+            <div class="cpanel" id="panel-sec">
+              <div class="csec">
+                <div class="cst"><i class="fa-solid fa-triangle-exclamation" style="color:var(--acc);margin-right:8px"></i>Segurança e Privacidade</div>
+                <div class="csd">Entenda como seus dados são tratados e protegidos.</div>
+                <div class="lgpd">
+                  <div class="lgpdt"><i class="fa-solid fa-list-check"></i>Lei Geral de Proteção de Dados (LGPD — Lei nº 13.709/2018)</div>
+                  <div class="lgpdb">
+                    <p>O <strong>TaskAI</strong> está em total conformidade com a <strong>Lei Geral de Proteção de Dados (LGPD)</strong>. Todos os seus dados pessoais — nome, email, senha, tarefas e foto de perfil — são tratados como <strong>dados sensíveis</strong> e protegidos com as mais altas medidas de segurança disponíveis.</p>
+                    <p><strong>Sobre o armazenamento:</strong> suas informações são guardadas de forma segura em banco de dados. Senhas são protegidas por hash criptográfico e nunca ficam em texto simples. Nenhum dado é compartilhado com terceiros.</p>
+                    <p><strong>Direito ao esquecimento:</strong> em conformidade com o Art. 18 da LGPD, ao <strong>excluir sua conta</strong>, todos os seus dados pessoais, tarefas, conversas com a IA e foto de perfil são <strong>permanentemente removidos do banco de dados</strong>. A exclusão é imediata e irreversível.</p>
+                    <p><strong>Transparência:</strong> você tem controle total sobre seus dados e pode visualizar, editar ou excluir qualquer informação a qualquer momento por aqui.</p>
+                    <p style="color:var(--acc);font-weight:500"><i class="fa-solid fa-lock" style="margin-right:6px"></i>Todos os seus dados são tratados com confidencialidade e proteção máxima.</p>
+                  </div>
+                </div>
+                <div class="secgrid">
+                  <div class="secbox"><i class="fa-solid fa-lock" style="color:var(--acc)"></i><div class="sbt">Senhas criptografadas</div><div class="sbs">hash seguro</div></div>
+                  <div class="secbox"><i class="fa-solid fa-triangle-exclamation" style="color:var(--ok)"></i><div class="sbt">Dados protegidos</div><div class="sbs">LGPD compliant</div></div>
+                  <div class="secbox"><i class="fa-solid fa-trash" style="color:var(--err)"></i><div class="sbt">Exclusão total</div><div class="sbs">Sem rastros</div></div>
+                </div>
+              </div>
+              <div class="csec">
+                <div class="cst">Excluir conta</div>
+                <div class="csd">Esta ação é permanente e irreversível.</div>
+                <div class="delbox">
+                  <div class="delt"><i class="fa-solid fa-triangle-exclamation" style="margin-right:8px"></i>Zona de perigo</div>
+                  <div class="deld">Ao excluir sua conta, <strong>todos os seus dados serão permanentemente apagados do banco de dados</strong> — perfil, tarefas, conversas com a IA e funcionários cadastrados. Esta ação é <strong>irreversível</strong> e está em conformidade com a LGPD.</div>
+                  <button class="btn bdg" onclick="document.getElementById('delAccMod').classList.add('on')"><i class="fa-solid fa-trash"></i> Excluir minha conta</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal excluir conta -->
+      <div class="ov" id="delAccMod"><div class="modal">
+        <div class="mtitle"><i class="fa-solid fa-triangle-exclamation" style="color:var(--err);margin-right:8px"></i>Excluir conta permanentemente</div>
+        <div class="mdesc">Esta ação é <strong>permanente e irreversível</strong>. Todos os seus dados (perfil, tarefas, conversas e funcionários) são apagados do banco de dados imediatamente, em conformidade com a LGPD.<br><br>Digite sua senha para confirmar:</div>
+        <div class="iw" style="margin-bottom:8px"><input type="password" id="delPw" class="minp" style="margin-bottom:0" placeholder="Sua senha atual">
+          <button type="button" class="pweye" onclick="togglePw(this,'delPw')" title="Mostrar senha"></button></div>
+        <div class="em" id="delErr"></div>
+        <div class="mfoot"><button class="btn bg" onclick="closeDelAcc()">Cancelar</button>
+          <button class="btn bdg" onclick="delAcc(this)"><i class="fa-solid fa-trash"></i> Excluir definitivamente</button></div>
+      </div></div>
+
+
+  </div>
+</div>
+
+<!-- Modals -->
+<div class="ov" id="delMod"><div class="modal">
+  <div class="mtitle"><i class="fa-solid fa-triangle-exclamation" style="color:var(--err);margin-right:8px"></i>Excluir tarefas</div>
+  <div class="mdesc" id="delDesc">Tem certeza? Esta ação não pode ser desfeita.</div>
+  <div class="mfoot"><button class="btn bg" onclick="closeMod('delMod')">Cancelar</button>
+    <button class="btn bdg" onclick="doBulkDel()"><i class="fa-solid fa-trash"></i> Excluir</button></div>
+</div></div>
+
+<div class="ov" id="editMod"><div class="modal" style="max-width:490px">
+  <div class="mtitle"><i class="fa-solid fa-pen" style="color:var(--acc);margin-right:8px"></i>Editar Tarefa</div>
+  <input type="hidden" id="eId">
+  <div class="ff" style="margin-bottom:12px"><label>Nome *</label><input type="text" id="eName" class="minp" style="margin-bottom:0" maxlength="200"></div>
+  <div class="ff" style="margin-bottom:12px"><label>Descrição</label><textarea id="eDesc" rows="3" class="minp" style="margin-bottom:0;resize:vertical"></textarea></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+    <div class="ff"><label>Prioridade</label><select id="ePrio" class="minp" style="margin-bottom:0">
+      <option value="alta">🔴 Alta</option><option value="media">🟡 Média</option><option value="baixa">🟢 Baixa</option></select></div>
+    <div class="ff"><label>Prazo</label><input type="date" id="eDl" class="minp" style="margin-bottom:0"></div>
+  </div>
+  <div class="ff hidden" id="eEmpWrap" style="margin-bottom:12px"><label>Funcionário</label>
+    <select id="eEmp" class="minp" style="margin-bottom:0"><option value="">— Ninguém —</option></select></div>
+  <div class="ff" style="margin-bottom:0"><label>Status</label><select id="eSt" class="minp" style="margin-bottom:0">
+    <option value="pendente">Pendente</option><option value="em_andamento">Em andamento</option><option value="concluido">Concluído</option></select></div>
+  <div class="mfoot"><button class="btn bg" onclick="closeMod('editMod')">Cancelar</button>
+    <button class="btn bp" onclick="saveEdit()"><i class="fa-solid fa-floppy-disk"></i> Salvar</button></div>
+</div></div>
+
+<div class="ov" id="addMod"><div class="modal">
+  <div class="mtitle"><i class="fa-solid fa-user-plus" style="color:var(--acc);margin-right:8px"></i>Novo funcionário</div>
+  <div class="ff" style="margin-bottom:12px"><label>Nome *</label><input type="text" id="empName" class="minp" style="margin-bottom:0" maxlength="120" placeholder="Ex.: Maria Souza"></div>
+  <div class="ff" style="margin-bottom:0"><label>Cargo (opcional)</label><input type="text" id="empRole" class="minp" style="margin-bottom:0" maxlength="120" placeholder="Ex.: Analista de Vendas"></div>
+  <div class="mfoot"><button class="btn bg" onclick="closeMod('addMod')">Cancelar</button>
+    <button class="btn bp" onclick="addEmp(this)"><i class="fa-solid fa-check"></i> Adicionar</button></div>
+</div></div>
+
+<div id="toasts"></div>
+
+<script>
+/* ══════════════ ÍCONES (SVG embutido — não depende de fonte externa) ══════════════ */
+const ICONS = {
+'arrow-right':'<path d="M5 12h14M13 6l6 6-6 6"/>',
+'arrow-right-to-bracket':'<path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5M15 12H3"/>',
+'right-to-bracket':'<path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5M15 12H3"/>',
+'bell':'<path d="M6 8a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 21a2 2 0 0 0 4 0"/>',
+'bell-slash':'<path d="M8.7 3.7A6 6 0 0 1 18 8c0 3.3.9 4.9 1.5 5.6M6.3 6.3C6.1 6.8 6 7.4 6 8c0 5-2 6-2 6h13"/><path d="M10 21a2 2 0 0 0 4 0"/><line x1="2" y1="2" x2="22" y2="22"/>',
+'building':'<rect x="4" y="2" width="16" height="20" rx="1"/><path d="M9 22v-4h6v4M9 7h1M14 7h1M9 11h1M14 11h1M9 15h1M14 15h1"/>',
+'calendar':'<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+'check':'<path d="M5 12l5 5L19 7"/>',
+'check-double':'<path d="M2 12.5l4.5 4.5L17 6.5"/><path d="M8 17l1 1L20 7"/>',
+'circle-check':'<circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 5-5"/>',
+'circle-info':'<circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16"/><circle cx="12" cy="7.7" r=".9" fill="currentColor" stroke="none"/>',
+'circle-xmark':'<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5l5 5M14.5 9.5l-5 5"/>',
+'clock':'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>',
+'comments':'<path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.4 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8A8.5 8.5 0 0 1 12.5 3a8.48 8.48 0 0 1 8.5 8v.5z"/>',
+'copy':'<rect x="9" y="9" width="12" height="12" rx="1"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>',
+'crown':'<path d="M3 8l4 4 5-7 5 7 4-4-2 10H5L3 8z"/>',
+'envelope':'<rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 6l10 7 10-7"/>',
+'flask':'<path d="M9 2h6M10 2v6l-6 11a2 2 0 0 0 2 3h12a2 2 0 0 0 2-3l-6-11V2"/><path d="M7 15h10"/>',
+'floppy-disk':'<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M7 3v5h9M7 21v-8h10v8"/>',
+'gauge-high':'<path d="M4.9 19.1a9 9 0 1 1 14.2 0"/><path d="M12 13l3.5-4.5"/><circle cx="12" cy="13" r="1" fill="currentColor" stroke="none"/>',
+'gear':'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+'inbox':'<path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.4 5H18.6l3.4 7v7a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-7l3.4-7z"/>',
+'key':'<circle cx="8" cy="15" r="4"/><path d="M10.8 12.2L20 3M17 6l3 3M14 9l2 2"/>',
+'layer-group':'<path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/>',
+'list-check':'<path d="M9 6h11M9 12h11M9 18h11"/><path d="M3 6l1 1 2-2M3 12l1 1 2-2M3 18l1 1 2-2"/>',
+'lock':'<rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 1 1 8 0v3"/>',
+'magnifying-glass':'<circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/>',
+'message':'<path d="M21 11.5a8.38 8.38 0 0 1-9 8.4 8.5 8.5 0 0 1-4-1L3 21l1.3-3.9a8.5 8.5 0 1 1 16.7-5.6z"/>',
+'moon':'<path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/>',
+'paper-plane':'<path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>',
+'pen':'<path d="M17 3a2.85 2.85 0 1 1 4 4L7 21l-4 1 1-4L17 3z"/>',
+'plus':'<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+'right-from-bracket':'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/>',
+'robot':'<rect x="4" y="8" width="16" height="12" rx="2"/><circle cx="9" cy="14" r="1.1" fill="currentColor" stroke="none"/><circle cx="15" cy="14" r="1.1" fill="currentColor" stroke="none"/><path d="M12 8V4M9.5 4h5"/>',
+'rotate':'<path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/>',
+'rotate-left':'<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 3v6h6"/>',
+'seedling':'<path d="M12 21v-6"/><path d="M12 15C7 15 4 12 4 7c5 0 8 3 8 8z"/><path d="M12 12c0-4 2.5-7 7-7 0 4-2.5 7-7 7z"/>',
+'spinner':'<circle cx="12" cy="12" r="9" stroke-dasharray="34 20"/>',
+'sun':'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M2 12h2M20 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/>',
+'trash':'<path d="M4 7h16M9 7V4h6v3M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13"/>',
+'triangle-exclamation':'<path d="M12 3l10 18H2L12 3z"/><line x1="12" y1="9" x2="12" y2="14"/><circle cx="12" cy="17.3" r=".9" fill="currentColor" stroke="none"/>',
+'up-right-and-down-left-from-center':'<path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>',
+'user':'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/>',
+'user-plus':'<circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3.1-7 7-7s7 3 7 7"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="16" y1="11" x2="22" y2="11"/>',
+'users':'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 21c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/><circle cx="17" cy="9" r="3"/><path d="M15.5 14.3c2.9.4 5 2.9 5 6.2"/>',
+'id-badge':'<rect x="5" y="3" width="14" height="18" rx="2"/><circle cx="12" cy="10" r="2.5"/><path d="M8 17c.5-2 2-3 4-3s3.5 1 4 3M9 6h6"/>',
+};
+function iconSVG(name){
+  const inner = ICONS[name];
+  if(inner===undefined) return null;
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`;
+}
+function iconizeEl(el){
+  if(!el || el.tagName!=='I' || el.dataset.iconDone) return;
+  const cls = el.className||'';
+  const m = cls.match(/fa-(?:solid|regular)\s+fa-([a-z0-9-]+)/);
+  if(!m) return;
+  const svgInner = ICONS[m[1]];
+  if(svgInner===undefined) return;
+  const extra = cls.replace(/fa-(solid|regular)/,'').replace('fa-'+m[1],'').trim();
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('viewBox','0 0 24 24');
+  svg.setAttribute('class', ('ico '+extra).trim());
+  svg.dataset.iconName = m[1];
+  const id=el.getAttribute('id'); if(id) svg.setAttribute('id', id);
+  const style=el.getAttribute('style'); if(style) svg.setAttribute('style',style);
+  const title=el.getAttribute('title'); if(title) svg.setAttribute('aria-label',title);
+  svg.innerHTML = svgInner;
+  el.replaceWith(svg);
+}
+function iconizeAll(root){
+  (root||document).querySelectorAll('i[class*="fa-"]').forEach(iconizeEl);
+}
+new MutationObserver(muts=>{
+  muts.forEach(m=>m.addedNodes.forEach(n=>{
+    if(n.nodeType!==1) return;
+    if(n.tagName==='I') iconizeEl(n);
+    else if(n.querySelectorAll) iconizeAll(n);
+  }));
+}).observe(document.documentElement, {childList:true, subtree:true});
+iconizeAll(document);
+
+/* ══════════════ MOCK STATE (tudo em memória — sem backend) ══════════════ */
+let DB = null;
+let uidCounter = 100;
+const AVATAR_COLORS = ['#2563eb','#7c3aed','#059669','#d97706','#dc2626','#0891b2','#c026d3'];
+
+/* Empresas — persiste durante toda a sessão do navegador, mesmo entre login/logout,
+   para simular o fluxo de "gestor gera código → funcionário entra com o código". */
+let COMPANIES = {};
+let companyIdCounter = 0;
+
+function newUid(){ return ++uidCounter; }
+function todayISO(off=0){ const d=new Date(); d.setDate(d.getDate()+off); return d.toISOString().slice(0,10); }
+function genInviteCode(){
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let c=''; for(let i=0;i<6;i++) c+=chars[Math.floor(Math.random()*chars.length)];
+  return c;
+}
+function createCompany(ownerName){
+  const id = ++companyIdCounter;
+  COMPANIES[id] = { id, ownerName, inviteCode: genInviteCode(), employees: seedEmployees() };
+  return COMPANIES[id];
+}
+function findCompanyByCode(code){
+  code=(code||'').trim().toUpperCase();
+  return Object.values(COMPANIES).find(c=>c.inviteCode===code) || null;
+}
+function curCompany(){ return (DB && DB.user.companyId) ? COMPANIES[DB.user.companyId] : null; }
+function emps(){ const c=curCompany(); return c ? c.employees : []; }
+
+function seedTasks(){
+  return [
+    {id:newUid(),name:'Finalizar relatório mensal',description:'Compilar métricas de vendas de agosto',priority:'alta',status:'em_andamento',deadline:todayISO(3),employeeId:null,createdAt:Date.now()-9000000},
+    {id:newUid(),name:'Revisar proposta comercial',description:'Cliente Acme Corp — ajustar valores',priority:'media',status:'pendente',deadline:todayISO(6),employeeId:null,createdAt:Date.now()-7000000},
+    {id:newUid(),name:'Organizar arquivos do projeto',description:'',priority:'baixa',status:'concluido',deadline:todayISO(-2),employeeId:null,createdAt:Date.now()-5000000},
+    {id:newUid(),name:'Agendar reunião de equipe',description:'Alinhamento semanal de sexta',priority:'media',status:'pendente',deadline:todayISO(1),employeeId:null,createdAt:Date.now()-3000000},
+  ];
+}
+function seedEmployees(){
+  return [
+    {id:newUid(),name:'Ana Ribeiro',role:'Designer',color:AVATAR_COLORS[1]},
+    {id:newUid(),name:'Bruno Alves',role:'Desenvolvedor',color:AVATAR_COLORS[3]},
+  ];
+}
+function seedConv(){ return {id:newUid(),title:'Nova conversa',messages:[
+  {role:'ai',text:'Olá! 👋 Sou o TaskAI, seu assistente de produtividade. Posso ajudar com dicas de organização, priorização, status da equipe e muito mais. Como posso ajudar?',time:nowTime()}
+]};}
+
+function nowTime(){ return new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); }
+function X(s){ const d=document.createElement('div'); d.textContent=s==null?'':s; return d.innerHTML; }
+function fD(s){ if(!s) return '—'; const [y,m,d]=s.split('-'); return `${d}/${m}/${y}`; }
+
+function toast(msg,t='inf'){
+  const c=document.getElementById('toasts');
+  const el=document.createElement('div'); el.className='toast t'+t;
+  const ic={ok:'circle-check',err:'circle-exclamation',inf:'circle-info'};
+  el.innerHTML=`<i class="fa-solid fa-${ic[t]||ic.inf}"></i>${X(msg)}`;
+  c.appendChild(el);
+  setTimeout(()=>{el.style.cssText='opacity:0;transition:opacity .3s';setTimeout(()=>el.remove(),300);},3200);
+}
+
+/* ══════════════ AUTH ══════════════ */
+let regAccType='comum';
+function swAuth(t){
+  const isL=t==='login';
+  document.getElementById('sLogin').classList.toggle('on',isL);
+  document.getElementById('sReg').classList.toggle('on',!isL);
+  document.getElementById('tLogin').classList.toggle('on',isL);
+  document.getElementById('tReg').classList.toggle('on',!isL);
+  document.getElementById('fTitle').textContent=isL?'Bem-vindo de volta':'Criar sua conta';
+  document.getElementById('fSub').textContent=isL?'Entre na sua conta para continuar':'Preencha os dados para se cadastrar';
+  document.getElementById('lErr').style.display='none';
+  document.getElementById('rErr').style.display='none';
+}
+function setAcc(t){
+  regAccType=t;
+  document.getElementById('accComum').classList.toggle('sel',t==='comum');
+  document.getElementById('accCorp').classList.toggle('sel',t==='corporativo');
+}
+function showErr(id,msg){ const e=document.getElementById(id); e.textContent=msg; e.style.display='block'; }
+
+const SVG_EYE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7.5 11-7.5S23 12 23 12s-4 7.5-11 7.5S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+const SVG_EYE_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.9 10.9 0 0 1 12 19.5C5 19.5 1 12 1 12a19 19 0 0 1 5.17-6.06M9.9 4.72A10.6 10.6 0 0 1 12 4.5c7 0 11 7.5 11 7.5a19 19 0 0 1-2.22 3.27m-6.6-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+function initPwEye(btn){ btn.innerHTML = SVG_EYE; }
+document.querySelectorAll('.pweye').forEach(initPwEye);
+
+function togglePw(btn,inputId){
+  const inp=document.getElementById(inputId);
+  const show = inp.type==='password';
+  inp.type = show ? 'text' : 'password';
+  inp.classList.toggle('pwfield', show);
+  btn.innerHTML = show ? SVG_EYE_OFF : SVG_EYE;
+  btn.title = show ? 'Ocultar senha' : 'Mostrar senha';
+  btn.setAttribute('aria-label', btn.title);
+}
+
+function doLogin(btn){
+  const e=document.getElementById('lErr'); e.style.display='none';
+  const email=document.getElementById('lEmail').value.trim();
+  const pass=document.getElementById('lPass').value;
+  if(!email||!pass) return showErr('lErr','Preencha todos os campos.');
+  btn.disabled=true; btn.innerHTML='<span class="spin"></span> Entrando…';
+  setTimeout(()=>{
+    const username = email.split('@')[0].replace(/[._]/g,' ').replace(/\b\w/g,c=>c.toUpperCase()) || 'Usuário Demo';
+    initSession({username, email, accountType:'comum', isManager:false, companyId:null, plan:'basico', avatarColor:AVATAR_COLORS[0], seeded:true});
+    toast('Login realizado (modo demonstração)','ok');
+  }, 500);
+}
+function doReg(btn){
+  const e=document.getElementById('rErr'); e.style.display='none';
+  const name=document.getElementById('rName').value.trim();
+  const email=document.getElementById('rEmail').value.trim();
+  const pass=document.getElementById('rPass').value;
+  if(!name||!email||!pass) return showErr('rErr','Preencha todos os campos.');
+  if(pass.length<6) return showErr('rErr','A senha deve ter no mínimo 6 caracteres.');
+
+  btn.disabled=true; btn.innerHTML='<span class="spin"></span> Criando…';
+  setTimeout(()=>{
+    const avatarColor=AVATAR_COLORS[Math.floor(Math.random()*AVATAR_COLORS.length)];
+    if(regAccType==='corporativo'){
+      const company=createCompany(name);
+      initSession({username:name, email, accountType:'corporativo', isManager:true, companyId:company.id,
+        plan:'empresarial', avatarColor, seeded:false});
+      toast('Sala da equipe criada! Seu código de convite está na página Equipe.','ok');
+    } else {
+      initSession({username:name, email, accountType:'comum', isManager:false, companyId:null,
+        plan:'basico', avatarColor, seeded:false});
+      toast('Conta criada com sucesso!','ok');
+    }
+  }, 500);
+}
+function doLogout(){
+  DB = null;
+  document.getElementById('appShell').classList.add('hidden');
+  document.getElementById('loginView').classList.remove('hidden');
+  document.getElementById('lEmail').value=''; document.getElementById('lPass').value='';
+  document.getElementById('udrop').classList.remove('on');
+  toast('Você saiu da conta.','inf');
+}
+
+function initSession(user){
+  if(user.notificationsEnabled===undefined) user.notificationsEnabled=true;
+  if(user.avatarPhoto===undefined) user.avatarPhoto=null;
+  DB = {
+    theme: document.documentElement.getAttribute('data-theme')||'dark',
+    user,
+    tasks: user.seeded ? seedTasks() : [],
+    notifications: [
+      {id:newUid(),type:'task_created',title:'Bem-vindo ao TaskAI',message:'Sua conta foi criada com sucesso.',read:false,createdAt:new Date().toISOString()},
+    ],
+    conversations: [seedConv()],
+    activeConvId: null,
+  };
+  DB.activeConvId = DB.conversations[0].id;
+  document.getElementById('loginView').classList.add('hidden');
+  document.getElementById('appShell').classList.remove('hidden');
+  updateAccountUI();
+  paintUser();
+  renderNotifs();
+  showPage('dashboard');
+}
+
+function paintUser(){
+  const u=DB.user;
+  document.getElementById('topUnl').textContent=u.username;
+  paintAvatarEl(document.getElementById('topAvatar'), u);
+  document.getElementById('ddName').textContent=u.username;
+  document.getElementById('ddEmail').textContent=u.email;
+  const chip=document.getElementById('ddType'); chip.textContent = u.accountType==='corporativo'?'Corporativo':'Comum';
+  chip.className='plchip '+(u.accountType==='corporativo'?'corp':'comum');
+  const planNames={basico:'',pessoal:'Pessoal',empresarial:'Empresarial'};
+  const ddPro=document.getElementById('ddPro'); ddPro.textContent=planNames[u.plan]||''; ddPro.classList.toggle('hidden', u.plan==='basico');
+
+  // Configurações — Perfil
+  paintAvatarEl(document.getElementById('avPrev'), u);
+  document.getElementById('btnRemoveAv').classList.toggle('hidden', !u.avatarPhoto);
+  renderColorPicks();
+  const setNameInp=document.getElementById('setNameInp'); if(document.activeElement!==setNameInp) setNameInp.value=u.username;
+  const setEmailInp=document.getElementById('setEmailInp'); if(document.activeElement!==setEmailInp) setEmailInp.value=u.email;
+  const st=document.getElementById('setType'); st.textContent=u.accountType==='corporativo'?'Corporativo':'Comum';
+  st.className='plchip '+(u.accountType==='corporativo'?'corp':'comum');
+
+  // Configurações — Plano
+  const planAccTxt=document.getElementById('planAccTxt'); if(planAccTxt) planAccTxt.textContent = u.accountType==='corporativo'?'Corporativa':'Comum';
+  const planNameTxt=document.getElementById('planNameTxt'); if(planNameTxt) planNameTxt.textContent = {basico:'Básico (gratuito)',pessoal:'Pessoal — R$ 25/mês',empresarial:'Empresarial — R$ 80/mês'}[u.plan]||'Básico';
+
+  // Configurações — Notificações
+  const nSwitch=document.getElementById('notifSwitch'); if(nSwitch) nSwitch.classList.toggle('on', u.notificationsEnabled);
+  const nTxt=document.getElementById('notifStatusTxt'); if(nTxt) nTxt.textContent = u.notificationsEnabled?'Ativadas':'Desativadas';
+
+  // Configurações — Aparência
+  const curTheme=document.documentElement.getAttribute('data-theme')||'dark';
+  document.querySelectorAll('.theme-opt').forEach(b=>b.classList.toggle('sel', b.dataset.v===curTheme));
+}
+function paintAvatarEl(el,u){
+  if(!el) return;
+  if(u.avatarPhoto){ el.style.background='transparent'; el.innerHTML=`<img src="${u.avatarPhoto}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`; }
+  else { el.style.background=u.avatarColor; el.textContent=u.username[0].toUpperCase(); }
+}
+const AV_PALETTE=['#2563eb','#7c3aed','#0d9488','#db2777','#ea580c','#16a34a','#0891b2','#dc2626'];
+function renderColorPicks(){
+  const wrap=document.getElementById('colorPicks'); if(!wrap||!DB) return;
+  const u=DB.user;
+  wrap.innerHTML=AV_PALETTE.map(c=>`<div class="cpick ${c.toLowerCase()===u.avatarColor.toLowerCase()?'sel':''}" style="background:${c}" onclick="pickColor('${c}')"></div>`).join('');
+  wrap.style.display = u.avatarPhoto ? 'none' : 'flex';
+}
+function pickColor(c){
+  DB.user.avatarColor=c; paintUser(); toast('Cor atualizada','ok');
+}
+function uploadAvatar(input){
+  const file=input.files[0]; if(!file) return;
+  if(file.size > 6*1024*1024){ toast('Imagem muito grande (máx. 6MB)','err'); input.value=''; return; }
+  const reader=new FileReader();
+  reader.onload=e=>{ DB.user.avatarPhoto=e.target.result; paintUser(); toast('Foto de perfil atualizada!','ok'); };
+  reader.onerror=()=>toast('Erro ao ler a imagem.','err');
+  reader.readAsDataURL(file);
+  input.value='';
+}
+function removeAvatar(){ DB.user.avatarPhoto=null; paintUser(); toast('Foto removida.','ok'); }
+function previewName(){ /* preview ao vivo é feito pelo próprio paintUser após salvar */ }
+
+/* ══════════════ NAVIGATION ══════════════ */
+function showPage(p){
+  document.querySelectorAll('.pg').forEach(el=>el.classList.add('hidden'));
+  document.getElementById('pg-'+p).classList.remove('hidden');
+  document.querySelectorAll('.slink').forEach(el=>el.classList.remove('on'));
+  document.getElementById('nav-'+p).classList.add('on');
+  document.getElementById('udrop').classList.remove('on');
+  document.getElementById('ndrop').classList.remove('on');
+  if(p==='dashboard') renderDashboard();
+  if(p==='tasks') renderTasks();
+  if(p==='chat') renderChatPage();
+  if(p==='equipe') renderEquipe();
+  if(p==='planos') renderPlanos();
+  if(p==='settings') paintUser();
+  renderWidget();
+}
+function goDash(focus){
+  showPage('dashboard');
+  if(focus) setTimeout(()=>{ const f=document.getElementById('tName'); f.focus(); f.scrollIntoView({behavior:'smooth'}); },50);
+}
+function showSetTab(id,el){
+  document.querySelectorAll('.cpanel').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.cni').forEach(n=>n.classList.remove('on'));
+  document.getElementById('panel-'+id).classList.add('on');
+  el.classList.add('on');
+}
+
+/* ══════════════ THEME ══════════════ */
+function applyThemeIcon(t){
+  const el=document.getElementById('thicon');
+  if(el){
+    const name = t==='light' ? 'sun' : 'moon';
+    if(el.tagName==='I'){ el.className = 'fa-solid fa-'+name; iconizeEl(el); }
+    else { el.innerHTML = ICONS[name]; el.dataset.iconName = name; }
+  }
+  document.querySelectorAll('.theme-opt').forEach(b=>b.classList.toggle('sel', b.dataset.v===t));
+}
+function setTheme(t){
+  document.documentElement.setAttribute('data-theme',t);
+  applyThemeIcon(t);
+  if(DB) DB.theme=t;
+}
+function toggleTheme(){
+  const cur=document.documentElement.getAttribute('data-theme')||'dark';
+  setTheme(cur==='dark'?'light':'dark');
+}
+applyThemeIcon('dark');
+function setNotifications(on){
+  if(!DB) return;
+  DB.user.notificationsEnabled=on;
+  document.querySelectorAll('.notif-opt').forEach(b=>b.classList.toggle('sel', (b.dataset.v==='on')===on));
+  toast(on?'Notificações ativadas.':'Notificações desativadas.','inf');
+  if(!on){ document.getElementById('nbadge').classList.remove('on'); }
+  else { renderNotifs(); }
+}
+
+/* ══════════════ TOP DROPDOWNS ══════════════ */
+function togU(e){ e.stopPropagation(); document.getElementById('udrop').classList.toggle('on'); document.getElementById('ndrop').classList.remove('on'); }
+function togN(e){ e.stopPropagation(); document.getElementById('ndrop').classList.toggle('on'); document.getElementById('udrop').classList.remove('on'); renderNotifs(); }
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.tbr')){ document.getElementById('udrop').classList.remove('on'); document.getElementById('ndrop').classList.remove('on'); }
+});
+function renderNotifs(){
+  if(!DB) return;
+  const badge=document.getElementById('nbadge');
+  if(!DB.user.notificationsEnabled){
+    badge.classList.remove('on');
+    document.getElementById('ndbody').innerHTML='<div style="padding:40px 20px;text-align:center;color:var(--t3);font-size:13px"><i class="fa-solid fa-bell-slash" style="font-size:26px;display:block;margin-bottom:8px"></i>Notificações estão desativadas.<br><span class="secl" onclick="showPage(\'settings\')">Ativar em Configurações →</span></div>';
+    return;
+  }
+  const unread=DB.notifications.filter(n=>!n.read).length;
+  badge.textContent=unread>99?'99+':unread; badge.classList.toggle('on',unread>0);
+  const body=document.getElementById('ndbody');
+  if(!DB.notifications.length){ body.innerHTML='<div style="padding:40px 20px;text-align:center;color:var(--t3);font-size:13px"><i class="fa-regular fa-bell-slash" style="font-size:26px;display:block;margin-bottom:8px"></i>Sem notificações por aqui.</div>'; return; }
+  body.innerHTML=DB.notifications.slice().reverse().map(n=>`
+    <div class="ndi ${n.read?'':'unread'}"><div class="ndic"><i class="fa-solid fa-bell"></i></div>
+      <div><div class="ndtt">${X(n.title)}</div><div class="ndms">${X(n.message)}</div><div class="ndtm">agora mesmo</div></div></div>`).join('');
+}
+function markAllRead(){ DB.notifications.forEach(n=>n.read=true); renderNotifs(); }
+
+/* ══════════════ WIDGET ══════════════ */
+function renderWidget(){
+  if(!DB) return;
+  const total=DB.tasks.length, done=DB.tasks.filter(t=>t.status==='concluido').length;
+  const pct = total? Math.round((done/total)*100) : 0;
+  document.getElementById('rpct').textContent=pct+'%';
+  document.getElementById('wsub').textContent=`${done} de ${total} tarefas`;
+  const c=2*Math.PI*26; const f=document.getElementById('rfill');
+  f.style.strokeDasharray=c; f.style.strokeDashoffset=c-(pct/100)*c;
+}
+
+/* ══════════════ DASHBOARD ══════════════ */
+function stats(){
+  const t=DB.tasks;
+  return {total:t.length, pendente:t.filter(x=>x.status==='pendente').length,
+    em_andamento:t.filter(x=>x.status==='em_andamento').length, concluido:t.filter(x=>x.status==='concluido').length};
+}
+function badgeStatus(s){ return {pendente:'<span class="badge bpend">Pendente</span>',em_andamento:'<span class="badge bprog">Em andamento</span>',concluido:'<span class="badge bdone">Concluído</span>'}[s]||''; }
+function badgePrio(p){ return {alta:'<span class="badge balta">Alta</span>',media:'<span class="badge bmed">Média</span>',baixa:'<span class="badge bbai">Baixa</span>'}[p]||''; }
+
+function renderDashboard(){
+  const s=stats();
+  document.getElementById('dT').textContent=s.total; document.getElementById('dP').textContent=s.pendente;
+  document.getElementById('dE').textContent=s.em_andamento; document.getElementById('dD').textContent=s.concluido;
+  const empEl=document.getElementById('tEmp');
+  empEl.innerHTML='<option value="">— Ninguém (tarefa pessoal) —</option>'+emps().map(e=>`<option value="${e.id}">${X(e.name)}</option>`).join('');
+  const rc=document.getElementById('rcards');
+  const recent=DB.tasks.slice().sort((a,b)=>b.createdAt-a.createdAt).slice(0,6);
+  if(!recent.length){ rc.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:32px 0;color:var(--t3)"><i class="fa-solid fa-inbox" style="font-size:32px;display:block;margin-bottom:10px"></i>Nenhuma tarefa ainda — crie a sua primeira acima!</div>`; }
+  else {
+    rc.innerHTML=recent.map(t=>{
+      const emp=emps().find(e=>e.id===t.employeeId);
+      const eb=emp?`<span class="badge" style="background:var(--acc-dim);color:var(--acc)"><i class="fa-solid fa-user" style="font-size:9px"></i> ${X(emp.name)}</span>`:'';
+      return `<div class="tc"><div class="tch"><div class="tcn" title="${X(t.name)}">${X(t.name)}</div></div>
+        <div class="tcd">${X(t.description||'Sem descrição')}</div>
+        <div class="tcf">${badgeStatus(t.status)}${badgePrio(t.priority)}${eb}</div></div>`;
+    }).join('');
+  }
+  const box=document.getElementById('dashMsgs');
+  box.innerHTML=''; getActiveConv().messages.forEach(m=>appendMsgTo(box,m));
+  box.scrollTop=box.scrollHeight;
+}
+
+function createTask(btn){
+  const name=document.getElementById('tName').value.trim();
+  if(!name){ toast('Informe o nome da tarefa.','err'); document.getElementById('tName').focus(); return; }
+  btn.disabled=true; btn.innerHTML='<span class="spin"></span>';
+  setTimeout(()=>{
+    const empEl=document.getElementById('tEmp');
+    const t={id:newUid(), name, description:document.getElementById('tDesc').value.trim(),
+      priority:document.getElementById('tPrio').value, deadline:document.getElementById('tDl').value||null,
+      status:'pendente', employeeId: empEl.value?parseInt(empEl.value):null, createdAt:Date.now()};
+    DB.tasks.push(t);
+    DB.notifications.push({id:newUid(),type:'task_created',title:'Tarefa criada',message:`"${t.name}" foi adicionada.`,read:false,createdAt:new Date().toISOString()});
+    renderNotifs();
+    btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-plus"></i> Criar Tarefa';
+    toast('Tarefa criada!','ok');
+    document.getElementById('tName').value=''; document.getElementById('tDesc').value=''; document.getElementById('tDl').value=''; empEl.value='';
+    renderDashboard(); renderWidget();
+  }, 350);
+}
+
+/* ══════════════ TASKS PAGE ══════════════ */
+let curTab='all', curSearch='';
+function setTab(btn){ document.querySelectorAll('.tb').forEach(b=>b.classList.remove('on')); btn.classList.add('on'); curTab=btn.dataset.s; selSet.clear(); renderTasks(); }
+function filterSearch(){ curSearch=document.getElementById('tSearch').value.trim().toLowerCase(); renderTasks(); }
+
+function renderTasks(){
+  const s=stats();
+  document.getElementById('sT').textContent=s.total; document.getElementById('sP').textContent=s.pendente;
+  document.getElementById('sE').textContent=s.em_andamento; document.getElementById('sD').textContent=s.concluido;
+  document.getElementById('tasksSub').textContent = curSearch ? `Resultado para: "${curSearch}"` : 'Gerencie, filtre e organize todas as suas tarefas';
+  let list=DB.tasks.filter(t=> curTab==='all'||t.status===curTab).filter(t=> !curSearch || t.name.toLowerCase().includes(curSearch));
+  const sort=document.getElementById('sortSel').value;
+  const prioVal={alta:3,media:2,baixa:1};
+  if(sort==='newest') list=list.slice().sort((a,b)=>b.createdAt-a.createdAt);
+  else if(sort==='oldest') list=list.slice().sort((a,b)=>a.createdAt-b.createdAt);
+  else if(sort==='priority_high') list=list.slice().sort((a,b)=>prioVal[b.priority]-prioVal[a.priority]);
+  else if(sort==='priority_low') list=list.slice().sort((a,b)=>prioVal[a.priority]-prioVal[b.priority]);
+  const tb=document.getElementById('tbody');
+  const isCorp = DB.user.accountType==='corporativo';
+  if(!list.length){ tb.innerHTML=`<tr><td colspan="7"><div class="empty"><i class="fa-solid fa-inbox"></i><p>Nenhuma tarefa encontrada.</p></div></td></tr>`; updBbar(); return; }
+  tb.innerHTML=list.map(t=>rowHTML(t,isCorp)).join('');
+  selSet.forEach(id=>{ const cb=document.querySelector(`.tcb[data-id="${id}"]`); if(cb){ cb.checked=true; cb.closest('tr').classList.add('sel'); } });
+  updBbar();
+}
+function rowHTML(t,isCorp){
+  const emp=emps().find(e=>e.id===t.employeeId);
+  const empCell = isCorp ? `<td><span style="font-size:12px;color:var(--t2)">${emp?('<i class="fa-solid fa-user" style="margin-right:4px;font-size:10px"></i>'+X(emp.name)):'—'}</span></td>` : '';
+  return `<tr class="tr" id="row-${t.id}" data-id="${t.id}">
+    <td class="cbc"><input type="checkbox" class="tcb" data-id="${t.id}" onchange="onCb(this)"></td>
+    <td><div class="tname" id="tn-${t.id}" ondblclick="startNEdit(${t.id})" title="Duplo clique para editar">${X(t.name)}</div>
+      ${t.description?`<div class="tdesc">${X(t.description.slice(0,60))}${t.description.length>60?'…':''}</div>`:''}</td>
+    <td><select class="psel" onchange="updField(${t.id},'priority',this.value)">
+      <option value="alta" ${t.priority==='alta'?'selected':''}>🔴 Alta</option>
+      <option value="media" ${t.priority==='media'?'selected':''}>🟡 Média</option>
+      <option value="baixa" ${t.priority==='baixa'?'selected':''}>🟢 Baixa</option></select></td>
+    ${empCell}
+    <td><span class="dltext" id="dl-${t.id}" data-v="${t.deadline||''}" ondblclick="startDlEdit(${t.id})" title="Duplo clique para editar">
+      <i class="fa-regular fa-calendar" style="margin-right:5px;font-size:11px"></i>${fD(t.deadline)}</span></td>
+    <td><select class="ssel ${t.status}" onchange="chgSt(${t.id},this)">
+      <option value="pendente" ${t.status==='pendente'?'selected':''}>Pendente</option>
+      <option value="em_andamento" ${t.status==='em_andamento'?'selected':''}>Em andamento</option>
+      <option value="concluido" ${t.status==='concluido'?'selected':''}>Concluído</option></select></td>
+    <td><div class="rats"><button class="bico" onclick="openEdit(${t.id})" title="Editar"><i class="fa-solid fa-pen"></i></button>
+      <button class="bico del" onclick="delOne(${t.id})" title="Excluir"><i class="fa-solid fa-trash"></i></button></div></td>
+  </tr>`;
+}
+function findTask(id){ return DB.tasks.find(t=>t.id===id); }
+
+function startNEdit(id){
+  const cell=document.getElementById('tn-'+id); const old=cell.textContent.trim();
+  cell.innerHTML=`<input class="minp" style="margin-bottom:0;padding:4px 8px;width:100%" value="${X(old)}" id="ne-${id}"
+    onblur="saveNEdit(${id})" onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){renderTasks();}">`;
+  document.getElementById('ne-'+id).focus();
+}
+function saveNEdit(id){
+  const inp=document.getElementById('ne-'+id); if(!inp) return;
+  const v=inp.value.trim(); if(!v){ renderTasks(); return; }
+  findTask(id).name=v; toast('Nome atualizado','ok'); renderTasks();
+}
+function startDlEdit(id){
+  const span=document.getElementById('dl-'+id); const val=span.dataset.v||'';
+  const inp=document.createElement('input'); inp.type='date'; inp.className='minp'; inp.style.cssText='margin-bottom:0;padding:4px 8px;width:130px'; inp.value=val;
+  inp.onblur=()=>{ findTask(id).deadline=inp.value||null; toast('Prazo atualizado','ok'); renderTasks(); };
+  inp.onkeydown=e=>{ if(e.key==='Enter') inp.blur(); if(e.key==='Escape') renderTasks(); };
+  span.replaceWith(inp); inp.focus();
+}
+function chgSt(id,sel){ sel.className='ssel '+sel.value; findTask(id).status=sel.value; toast('Status atualizado','ok'); renderTasks(); renderWidget(); }
+function updField(id,field,val){ findTask(id)[field]=val; toast('Atualizado','ok'); renderTasks(); }
+function delOne(id){ if(!confirm('Excluir esta tarefa?')) return; DB.tasks=DB.tasks.filter(t=>t.id!==id); selSet.delete(id); toast('Tarefa excluída','ok'); renderTasks(); renderWidget(); }
+
+let selSet=new Set();
+function onCb(cb){ const id=parseInt(cb.dataset.id); const row=document.getElementById('row-'+id);
+  if(cb.checked){ selSet.add(id); row.classList.add('sel'); } else { selSet.delete(id); row.classList.remove('sel'); } updBbar(); }
+function togAll(checked){
+  document.querySelectorAll('.tcb[data-id]').forEach(cb=>{ cb.checked=checked; const id=parseInt(cb.dataset.id); const row=document.getElementById('row-'+id);
+    if(checked){ selSet.add(id); row?.classList.add('sel'); } else { selSet.delete(id); row?.classList.remove('sel'); } });
+  document.getElementById('saHead').checked=checked; document.getElementById('saTop').checked=checked; updBbar();
+}
+function updBbar(){
+  const n=selSet.size;
+  document.getElementById('binfo').textContent=`${n} tarefa${n!==1?'s':''} selecionada${n!==1?'s':''}`;
+  document.getElementById('bbar').classList.toggle('on',n>0);
+  const all=document.querySelectorAll('.tcb[data-id]');
+  document.getElementById('saHead').checked = n>0 && n===all.length;
+}
+function confDel(){ if(!selSet.size) return; const n=selSet.size;
+  document.getElementById('delDesc').textContent=`Tem certeza que deseja excluir ${n} tarefa${n!==1?'s':''}? Esta ação não pode ser desfeita.`;
+  document.getElementById('delMod').classList.add('on'); }
+function doBulkDel(){ const ids=[...selSet]; DB.tasks=DB.tasks.filter(t=>!ids.includes(t.id)); closeMod('delMod');
+  toast(`${ids.length} tarefa${ids.length!==1?'s':''} excluída${ids.length!==1?'s':''}!`,'ok'); selSet.clear(); renderTasks(); renderWidget(); }
+
+function openEdit(id){
+  const t=findTask(id); if(!t){ toast('Tarefa não encontrada','err'); return; }
+  document.getElementById('eId').value=t.id; document.getElementById('eName').value=t.name;
+  document.getElementById('eDesc').value=t.description||''; document.getElementById('ePrio').value=t.priority;
+  document.getElementById('eDl').value=t.deadline||''; document.getElementById('eSt').value=t.status;
+  const empEl=document.getElementById('eEmp'); empEl.innerHTML='<option value="">— Ninguém —</option>'+emps().map(e=>`<option value="${e.id}">${X(e.name)}</option>`).join('');
+  empEl.value=t.employeeId||'';
+  document.getElementById('editMod').classList.add('on');
+}
+function saveEdit(){
+  const id=parseInt(document.getElementById('eId').value); const t=findTask(id);
+  const name=document.getElementById('eName').value.trim();
+  if(!name){ toast('Nome é obrigatório','err'); return; }
+  t.name=name; t.description=document.getElementById('eDesc').value.trim(); t.priority=document.getElementById('ePrio').value;
+  t.deadline=document.getElementById('eDl').value||null; t.status=document.getElementById('eSt').value;
+  const empEl=document.getElementById('eEmp'); t.employeeId=empEl.value?parseInt(empEl.value):null;
+  closeMod('editMod'); toast('Tarefa atualizada!','ok'); renderTasks(); renderWidget();
+}
+function closeMod(id){ document.getElementById(id).classList.remove('on'); }
+document.querySelectorAll('.ov').forEach(o=>o.addEventListener('click',e=>{ if(e.target===o) o.classList.remove('on'); }));
+
+/* ══════════════ CHAT / AI (simulada) ══════════════ */
+function getActiveConv(){ return DB.conversations.find(c=>c.id===DB.activeConvId); }
+function appendMsgTo(box,m){
+  const div=document.createElement('div'); div.className = m.role==='user'?'um':'aim';
+  const av = m.role==='user' ? `<div class="mav u">${X(DB.user.username[0].toUpperCase())}</div>` : `<div class="mav ai"><i class="fa-solid fa-robot" style="font-size:10px"></i></div>`;
+  div.innerHTML = `${av}<div class="mbody"><div class="bub">${X(m.text).replace(/\n/g,'<br>')}</div><span class="mt">${m.time}</span></div>`;
+  box.appendChild(div);
+}
+function mockAIReply(msg){
+  const s=stats(); const low=msg.toLowerCase();
+  if(/oi|olá|ola|bom dia|boa tarde|boa noite/.test(low))
+    return `Olá! 😊 Você tem ${s.total} tarefa(s) no total — ${s.pendente} pendente(s) e ${s.em_andamento} em andamento. Quer que eu sugira por onde começar?`;
+  if(/pendente|atrasad|prioridade/.test(low)){
+    const alta=DB.tasks.filter(t=>t.priority==='alta'&&t.status!=='concluido');
+    if(alta.length) return `Você tem ${alta.length} tarefa(s) de prioridade alta ainda não concluída(s): ${alta.map(t=>'"'+t.name+'"').join(', ')}. Recomendo focar nelas primeiro.`;
+    return 'Boas notícias — não vejo nenhuma tarefa de prioridade alta pendente agora. 👍';
+  }
+  if(/relat[óo]rio/.test(low))
+    return 'Na versão completa eu gero um relatório em .docx com o resumo das suas tarefas. Nesta prévia de demonstração esse recurso está desativado, mas posso te dar um resumo em texto se quiser.';
+  if(/equipe|funcion[áa]rio/.test(low)){
+    if(DB.user.accountType!=='corporativo') return 'Você ainda não faz parte de uma equipe. Peça o código de convite ao diretor(a) da sua empresa e digite-o na página "Equipe".';
+    return `Sua equipe tem ${emps().length} funcionário(s) cadastrado(s). Veja a página "Equipe" para acompanhar o progresso de cada um.`;
+  }
+  if(/obrigad|valeu|thanks/.test(low)) return 'Disponha! Estou por aqui se precisar de mais alguma coisa. 🙂';
+  const tips=[
+    'Uma dica de produtividade: divida tarefas grandes em passos menores — fica mais fácil manter o ritmo.',
+    `Você concluiu ${s.concluido} de ${s.total} tarefas até agora. Continue assim!`,
+    'Tente revisar suas prioridades no início do dia — isso ajuda a manter o foco no que realmente importa.',
+    'Posso te ajudar a organizar prazos, sugerir prioridades ou só bater um papo sobre produtividade. O que você gostaria?',
+  ];
+  return tips[Math.floor(Math.random()*tips.length)];
+}
+function sendAI(where){
+  const inpId = where==='dash' ? 'dashInp' : 'chatInp';
+  const boxId = where==='dash' ? 'dashMsgs' : 'chatMsgs';
+  const inp=document.getElementById(inpId); const msg=inp.value.trim(); if(!msg) return;
+  inp.value='';
+  const conv=getActiveConv();
+  conv.messages.push({role:'user',text:msg,time:nowTime()});
+  const box=document.getElementById(boxId);
+  appendMsgTo(box,{role:'user',text:msg,time:nowTime()}); box.scrollTop=box.scrollHeight;
+  const ty=document.createElement('div'); ty.className='aim';
+  ty.innerHTML=`<div class="mav ai"><i class="fa-solid fa-robot" style="font-size:10px"></i></div><div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
+  box.appendChild(ty); box.scrollTop=box.scrollHeight;
+  setTimeout(()=>{
+    ty.remove();
+    const reply=mockAIReply(msg);
+    conv.messages.push({role:'ai',text:reply,time:nowTime()});
+    appendMsgTo(box,{role:'ai',text:reply,time:nowTime()}); box.scrollTop=box.scrollHeight;
+    if(conv.title==='Nova conversa') conv.title = msg.slice(0,28)+(msg.length>28?'…':'');
+    if(document.getElementById('pg-chat') && !document.getElementById('pg-chat').classList.contains('hidden')) renderConvList();
+  }, 700+Math.random()*500);
+}
+function renderChatPage(){
+  renderConvList();
+  const box=document.getElementById('chatMsgs'); box.innerHTML='';
+  const conv=getActiveConv();
+  document.getElementById('convTitle').textContent=conv.title;
+  conv.messages.forEach(m=>appendMsgTo(box,m));
+  box.scrollTop=box.scrollHeight;
+}
+function renderConvList(){
+  const box=document.getElementById('convItems');
+  if(!DB.conversations.length){ box.innerHTML='<div style="padding:20px 12px;text-align:center;color:var(--t3);font-size:12px">Nenhuma conversa ainda.</div>'; return; }
+  box.innerHTML=DB.conversations.slice().reverse().map(c=>`
+    <div class="convi ${c.id===DB.activeConvId?'on':''}" onclick="openConv(${c.id})">
+      <i class="fa-regular fa-message" style="font-size:12px;color:var(--t3)"></i><span class="cvt">${X(c.title)}</span>
+      <span class="cvdel" onclick="event.stopPropagation();delConv(${c.id})"><i class="fa-solid fa-trash"></i></span>
+    </div>`).join('');
+}
+function openConv(id){ DB.activeConvId=id; renderChatPage(); }
+function newConv(){ const c=seedConv(); DB.conversations.push(c); DB.activeConvId=c.id; renderChatPage(); }
+function delConv(id){
+  if(DB.conversations.length===1){ toast('Você precisa manter ao menos uma conversa.','err'); return; }
+  DB.conversations=DB.conversations.filter(c=>c.id!==id);
+  if(DB.activeConvId===id) DB.activeConvId=DB.conversations[DB.conversations.length-1].id;
+  renderChatPage();
+}
+
+/* ══════════════ EQUIPE ══════════════ */
+function renderEquipe(){
+  const u=DB.user;
+  const isMgr = u.accountType==='corporativo' && u.isManager;
+  const isMember = u.accountType==='corporativo' && !u.isManager;
+  const company = curCompany();
+  document.getElementById('addEmpBtn').classList.toggle('hidden', !isMgr);
+
+  const left=document.getElementById('equipeLeftCol');
+  if(isMgr && company){
+    left.innerHTML=`<div class="eqcard">
+      <div class="eqicon"><i class="fa-solid fa-key"></i></div>
+      <h4>Código de convite</h4>
+      <p>Compartilhe com quem deve entrar na equipe. Gerar um novo código invalida o anterior na hora.</p>
+      <div class="invitecode">
+        <span class="codeval" id="inviteCodeVal">${company.inviteCode}</span>
+        <button class="btn bg bsm bfull" onclick="copyCode()"><i class="fa-solid fa-copy"></i> Copiar código</button>
+        <button class="btn bg bsm bfull" onclick="regenCode()"><i class="fa-solid fa-rotate"></i> Gerar novo código</button>
+      </div>
+    </div>`;
+  } else if(isMember){
+    left.innerHTML=`<div class="eqcard">
+      <div class="eqicon"><i class="fa-solid fa-building"></i></div>
+      <h4>Você faz parte de uma equipe</h4>
+      <p>Sua conta está vinculada à equipe de <strong style="color:var(--t1)">${X(company?company.ownerName:'—')}</strong>. Apenas o diretor(a) pode gerar ou compartilhar o código de convite.</p>
+    </div>`;
+  } else {
+    left.innerHTML=`<div class="eqcard">
+      <div class="eqicon"><i class="fa-solid fa-right-to-bracket"></i></div>
+      <h4>Entrar em uma equipe</h4>
+      <p>Recebeu um código do diretor(a) da sua empresa? Digite abaixo para entrar na equipe.</p>
+      <div class="iw" style="margin-bottom:8px"><i class="fa-solid fa-key"></i>
+        <input type="text" id="joinCode" placeholder="Ex.: 7K4P9X" maxlength="8" style="text-transform:uppercase;letter-spacing:2px">
+      </div>
+      <button class="btn bp bfull" onclick="joinTeam()"><i class="fa-solid fa-arrow-right-to-bracket"></i> Entrar na equipe</button>
+    </div>
+    <div class="eqdiv"><span>ou</span></div>
+    <div class="eqcard">
+      <div class="eqicon"><i class="fa-solid fa-building"></i></div>
+      <h4>Criar sua equipe</h4>
+      <p>Ainda não tem uma equipe? Gere um código agora — sua equipe é criada automaticamente e você vira o diretor(a).</p>
+      <button class="btn bp bfull" onclick="generateTeamCode()"><i class="fa-solid fa-key"></i> Gerar código da equipe</button>
+    </div>`;
+  }
+
+  const grid=document.getElementById('empGrid');
+  document.getElementById('empCount').textContent = `${emps().length} funcionário(s) na equipe`;
+  if(!emps().length){ grid.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:50px 0;color:var(--t3)"><i class="fa-solid fa-users" style="font-size:34px;display:block;margin-bottom:12px"></i>${isMgr?'Nenhum funcionário ainda. Compartilhe o código de convite ao lado ou adicione manualmente.':(isMember?'Nenhum outro funcionário entrou na equipe ainda.':'Entre em uma equipe ou gere seu código ao lado para ver os funcionários.')}</div>`; return; }
+  grid.innerHTML=emps().map(e=>{
+    const et=DB.tasks.filter(t=>t.employeeId===e.id).sort((a,b)=>b.createdAt-a.createdAt);
+    const done=et.filter(t=>t.status==='concluido').length;
+    const pct= et.length? Math.round((done/et.length)*100) : 0;
+    const delBtn = isMgr ? `<button class="empdel" onclick="delEmp(${e.id})" title="Remover"><i class="fa-solid fa-trash"></i></button>` : '';
+    const activities = et.length ? et.map(t=>`<div class="actrow"><span class="actn" title="${X(t.name)}">${X(t.name)}</span>${badgeStatus(t.status)}${badgePrio(t.priority)}</div>`).join('')
+      : `<div class="actempty">Nenhuma atividade atribuída ainda.</div>`;
+    return `<div class="empcard"><div class="emphead"><div class="empav" style="background:${e.color}">${X(e.name[0].toUpperCase())}</div>
+      <div><div class="empn">${X(e.name)}</div><div class="empr">${X(e.role||'Sem cargo definido')}</div></div>
+      ${delBtn}</div>
+      <div class="empbar"><div class="empbarf" style="width:${pct}%"></div></div>
+      <div class="empstats"><span>${et.length} tarefa(s)</span><span>${done} concluída(s) · ${pct}%</span></div>
+      <div class="actwrap"><span class="secl actlink" onclick="toggleActivities(${e.id})">Ver atividades <i class="fa-solid fa-arrow-right" id="actchev-${e.id}"></i></span>
+        <div class="actlist hidden" id="actlist-${e.id}">${activities}</div>
+      </div></div>`;
+  }).join('');
+}
+function joinTeam(){
+  const inp=document.getElementById('joinCode');
+  const code=inp.value.trim();
+  if(!code){ toast('Informe o código da equipe.','err'); return; }
+  const company=findCompanyByCode(code);
+  if(!company){ toast('Código inválido ou expirado. Peça um novo ao diretor(a).','err'); return; }
+  const u=DB.user;
+  company.employees.push({id:newUid(), name:u.username, role:'', color:u.avatarColor});
+  u.accountType='corporativo'; u.isManager=false; u.companyId=company.id;
+  updateAccountUI(); paintUser();
+  toast(`Você entrou na equipe de ${company.ownerName}!`,'ok');
+  renderEquipe();
+}
+function generateTeamCode(){
+  const u=DB.user;
+  const company=createCompany(u.username);
+  u.accountType='corporativo'; u.isManager=true; u.companyId=company.id; u.plan='empresarial';
+  updateAccountUI(); paintUser();
+  toast('Equipe criada! Compartilhe o código com seus funcionários.','ok');
+  renderEquipe();
+}
+function toggleActivities(id){
+  const list=document.getElementById('actlist-'+id);
+  const chev=document.getElementById('actchev-'+id);
+  if(!list) return;
+  const isHidden=list.classList.toggle('hidden');
+  if(chev) chev.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(90deg)';
+}
+function addEmp(btn){
+  const name=document.getElementById('empName').value.trim();
+  if(!name){ toast('Informe o nome do funcionário.','err'); return; }
+  const company=curCompany(); if(!company){ toast('Nenhuma empresa associada a esta conta.','err'); return; }
+  company.employees.push({id:newUid(), name, role:document.getElementById('empRole').value.trim(), color:AVATAR_COLORS[Math.floor(Math.random()*AVATAR_COLORS.length)]});
+  document.getElementById('empName').value=''; document.getElementById('empRole').value='';
+  closeMod('addMod'); toast('Funcionário adicionado!','ok'); renderEquipe();
+}
+function delEmp(id){
+  if(!confirm('Remover este funcionário? As tarefas atribuídas a ele ficarão sem responsável.')) return;
+  const company=curCompany(); if(!company) return;
+  company.employees=company.employees.filter(e=>e.id!==id);
+  DB.tasks.forEach(t=>{ if(t.employeeId===id) t.employeeId=null; });
+  toast('Funcionário removido.','ok'); renderEquipe();
+}
+function regenCode(){
+  const company=curCompany(); if(!company) return;
+  if(!confirm('Gerar um novo código? O código atual deixará de funcionar imediatamente.')) return;
+  company.inviteCode = genInviteCode();
+  document.getElementById('inviteCodeVal').textContent = company.inviteCode;
+  toast('Novo código gerado! O código anterior foi invalidado.','ok');
+}
+function copyCode(){
+  const company=curCompany(); if(!company) return;
+  const code=company.inviteCode;
+  try{
+    navigator.clipboard.writeText(code).then(()=>toast('Código copiado!','ok')).catch(()=>fallbackCopy(code));
+  }catch(e){ fallbackCopy(code); }
+}
+function fallbackCopy(code){
+  const inp=document.createElement('input'); inp.value=code; document.body.appendChild(inp);
+  inp.select();
+  try{ document.execCommand('copy'); toast('Código copiado!','ok'); }catch(e){ toast('Copie manualmente: '+code,'inf'); }
+  inp.remove();
+}
+
+/* ══════════════ PLANOS ══════════════ */
+const PLAN_TIERS=['basico','pessoal','empresarial'];
+const PLAN_FEATURES=[
+  {label:'Tarefas ilimitadas', min:'basico'},
+  {label:'Histórico de conversas com a IA', min:'basico'},
+  {label:'Relatório pessoal em .docx', min:'basico'},
+  {label:'Relatórios avançados e personalizados', min:'pessoal'},
+  {label:'Suporte prioritário', min:'pessoal'},
+  {label:'Gestão de equipe e convites', min:'empresarial'},
+  {label:'Funcionários ilimitados na equipe', min:'empresarial'},
+  {label:'Código de convite renovável a qualquer hora', min:'empresarial'},
+  {label:'Relatório consolidado da equipe', min:'empresarial'},
+];
+const PLAN_INFO={
+  basico:{name:'Básico',icon:'fa-seedling',tag:null,priceMonthly:0,desc:'Para começar a organizar suas tarefas',aiMsg:'15 mensagens de <abbr title="Inteligência Artificial">IA</abbr> por dia'},
+  pessoal:{name:'Pessoal',icon:'fa-user',tag:'Mais benefícios',priceMonthly:25,desc:'Para quem usa o TaskAI todos os dias',aiMsg:'100 mensagens de <abbr title="Inteligência Artificial">IA</abbr> por dia'},
+  empresarial:{name:'Empresarial',icon:'fa-building',tag:'Para equipes',priceMonthly:80,desc:'Gerencie sua equipe com código de convite',aiMsg:'Mensagens de <abbr title="Inteligência Artificial">IA</abbr> ilimitadas'},
+};
+const ANNUAL_DISCOUNT_PCT=20;
+let billingCycle='mensal';
+function setBillingCycle(c){
+  billingCycle=c;
+  document.getElementById('cycMensalBtn').classList.toggle('on',c==='mensal');
+  document.getElementById('cycAnualBtn').classList.toggle('on',c==='anual');
+  document.getElementById('cycMensalBtn').setAttribute('aria-checked',String(c==='mensal'));
+  document.getElementById('cycAnualBtn').setAttribute('aria-checked',String(c==='anual'));
+  renderPlanos();
+}
+function tierRank(t){ return PLAN_TIERS.indexOf(t); }
+function renderPlanos(){
+  const u=DB.user;
+  const grid=document.getElementById('plansGrid');
+  grid.innerHTML=PLAN_TIERS.map(key=>{
+    const p=PLAN_INFO[key];
+    const isCurrent = u.plan===key;
+    const feats=PLAN_FEATURES.map(f=>{
+      const has=tierRank(key)>=tierRank(f.min);
+      return `<li class="${has?'':'no'}"><i class="fa-solid ${has?'fa-circle-check':'fa-circle-xmark'}"></i><span>${f.label}</span></li>`;
+    }).join('');
+    let btn;
+    if(isCurrent){
+      btn = key==='basico' ? '<div class="demonote"><i class="fa-solid fa-check"></i> Este é o seu plano atual</div>'
+        : `<button class="btn bg bfull" onclick="activatePlan('basico')"><i class="fa-solid fa-rotate-left"></i> Voltar ao plano Básico</button>`;
+    } else {
+      btn = `<button class="btn bp bfull" onclick="activatePlan('${key}')"><i class="fa-solid fa-crown"></i> Ativar ${p.name}</button>`;
+    }
+    let priceHtml, cycNote='';
+    if(p.priceMonthly===0){
+      priceHtml = `R$ 0 <span>/sempre</span>`;
+    } else if(billingCycle==='mensal'){
+      priceHtml = `R$ ${p.priceMonthly.toFixed(2).replace('.',',')} <span>/mês</span>`;
+    } else {
+      const equiv=(p.priceMonthly*(1-ANNUAL_DISCOUNT_PCT/100));
+      const total=equiv*12;
+      const savingsMonth = p.priceMonthly - equiv;
+      const savingsYear = (p.priceMonthly*12) - total;
+      priceHtml = `<span class="pold">R$ ${p.priceMonthly.toFixed(2).replace('.',',')}</span><span class="pnew">R$ ${equiv.toFixed(2).replace('.',',')}</span> <span>/mês</span>`;
+      cycNote = `<div class="pcycnote">Cobrado R$ ${total.toFixed(2).replace('.',',')}/ano · você economiza <strong>R$ ${savingsYear.toFixed(2).replace('.',',')}</strong> (${ANNUAL_DISCOUNT_PCT}%) — ou R$ ${savingsMonth.toFixed(2).replace('.',',')} a menos por mês</div>`;
+    }
+    return `<div class="plan ${isCurrent?'hl':''}">
+      ${p.tag?`<div class="ptag">${p.tag}</div>`:''}
+      <div class="planicon ${key}"><i class="fa-solid ${p.icon}"></i></div>
+      <h3>${p.name}</h3><div class="pdesc">${p.desc}</div>
+      <div class="pprice">${priceHtml}</div>
+      ${cycNote}
+      <ul><li style="font-weight:600;color:var(--t1)"><i class="fa-solid fa-robot" style="color:var(--acc)"></i><span>${p.aiMsg}</span></li>${feats}</ul>
+      ${btn}
+      ${key!=='basico'?'<div class="demonote"><i class="fa-solid fa-circle-info"></i> Ambiente de demonstração — nenhuma cobrança real é feita ao ativar este plano.</div>':''}
+    </div>`;
+  }).join('');
+}
+function activatePlan(key){
+  const u=DB.user;
+  if(key==='pessoal' && u.accountType==='corporativo'){
+    toast('O plano Pessoal é para contas individuais. Crie uma conta Pessoal para assiná-lo.','inf'); return;
+  }
+  if(key==='empresarial' && u.accountType!=='corporativo'){
+    u.accountType='corporativo'; u.isManager=true;
+    if(!u.companyId){ const c=createCompany(u.username); u.companyId=c.id; }
+    updateAccountUI();
+    toast('Conta convertida para Empresarial! Seu código de convite já está disponível na página Equipe.','ok');
+  } else {
+    toast(key==='basico'?'Plano Básico restaurado.':`Plano ${PLAN_INFO[key].name} ativado! (demonstração)`,'ok');
+  }
+  u.plan=key;
+  paintUser(); renderPlanos();
+}
+function updateAccountUI(){
+  const u=DB.user;
+  document.getElementById('equipeShortcut').classList.toggle('hidden', u.accountType!=='corporativo');
+  document.querySelectorAll('.empCol').forEach(el=>el.classList.toggle('hidden', u.accountType!=='corporativo'));
+  document.getElementById('tEmpWrap').classList.toggle('hidden', u.accountType!=='corporativo');
+  document.getElementById('eEmpWrap').classList.toggle('hidden', u.accountType!=='corporativo');
+}
+
+/* ══════════════ SETTINGS ══════════════ */
+function saveProfile(){
+  const name=document.getElementById('setNameInp').value.trim();
+  if(!name){ toast('Informe um nome de usuário.','err'); return; }
+  DB.user.username=name; paintUser(); toast('Nome atualizado!','ok');
+}
+function saveEmail(){
+  const email=document.getElementById('setEmailInp').value.trim();
+  if(!email||!email.includes('@')){ toast('Informe um email válido.','err'); return; }
+  DB.user.email=email; paintUser(); toast('Email atualizado!','ok');
+}
+function savePw(btn){
+  const c=document.getElementById('pwC').value;
+  const n=document.getElementById('pwN').value;
+  const f=document.getElementById('pwF').value;
+  const eEl=document.getElementById('pwErr'); eEl.style.display='none';
+  if(!c||!n||!f){ eEl.textContent='Preencha todos os campos.'; eEl.style.display='block'; return; }
+  if(n!==f){ eEl.textContent='As novas senhas não coincidem.'; eEl.style.display='block'; return; }
+  if(n.length<6){ eEl.textContent='A nova senha deve ter pelo menos 6 caracteres.'; eEl.style.display='block'; return; }
+  btn.disabled=true; btn.innerHTML='<span class="spin"></span>';
+  setTimeout(()=>{
+    btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-key"></i> Alterar senha';
+    document.getElementById('pwC').value=''; document.getElementById('pwN').value=''; document.getElementById('pwF').value='';
+    toast('Senha alterada com sucesso!','ok');
+  }, 450);
+}
+function closeDelAcc(){
+  document.getElementById('delAccMod').classList.remove('on');
+  document.getElementById('delPw').value='';
+  document.getElementById('delErr').style.display='none';
+}
+function delAcc(btn){
+  const pw=document.getElementById('delPw').value;
+  const eEl=document.getElementById('delErr'); eEl.style.display='none';
+  if(!pw){ eEl.textContent='Digite sua senha para confirmar.'; eEl.style.display='block'; return; }
+  btn.disabled=true; btn.innerHTML='<span class="spin"></span>';
+  setTimeout(()=>{
+    // "exclui" a conta e todos os dados relacionados (LGPD — direito ao esquecimento)
+    if(DB.user.isManager && DB.user.companyId){ delete COMPANIES[DB.user.companyId]; }
+    else if(DB.user.companyId){ const c=curCompany(); if(c) c.employees=c.employees.filter(e=>e.name!==DB.user.username); }
+    closeDelAcc();
+    DB=null;
+    document.getElementById('appShell').classList.add('hidden');
+    document.getElementById('loginView').classList.remove('hidden');
+    document.getElementById('lEmail').value=''; document.getElementById('lPass').value='';
+    toast('Conta e todos os dados foram excluídos permanentemente.','ok');
+  }, 500);
+}
+document.getElementById('delAccMod').addEventListener('click',function(e){ if(e.target===this) closeDelAcc(); });
+/* ═══ ACESSIBILIDADE — painel flutuante (fonte, contraste, leitura em voz alta, Libras) ═══ */
+(function(){
+  var KEY='taskai-demo-a11y';
+  function loadPrefs(){ try{ return Object.assign({fs:0,contrast:false,underline:false,reduceMotion:false,libras:false}, JSON.parse(localStorage.getItem(KEY)||'{}')); }catch(e){ return {fs:0,contrast:false,underline:false,reduceMotion:false,libras:false}; } }
+  function savePrefs(p){ try{ localStorage.setItem(KEY, JSON.stringify(p)); }catch(e){} }
+  var prefs=loadPrefs(), speaking=false, vlibrasLoaded=false;
+
+  function applyPrefs(){
+    document.body.classList.remove('a11y-fs-1','a11y-fs-2','a11y-fs-3');
+    if(prefs.fs>0) document.body.classList.add('a11y-fs-'+prefs.fs);
+    document.documentElement.setAttribute('data-a11y-contrast', prefs.contrast?'on':'off');
+    document.body.classList.toggle('a11y-underline', !!prefs.underline);
+    document.body.classList.toggle('a11y-reduce-motion', !!prefs.reduceMotion);
+    if(prefs.libras) loadVLibras();
+    var w=document.querySelector('div[vw]');
+    if(w) w.style.display = prefs.libras ? '' : 'none';
+  }
+  function loadVLibras(){
+    if(vlibrasLoaded) return; vlibrasLoaded=true;
+    var wrap=document.createElement('div'); wrap.setAttribute('vw',''); wrap.className='enabled';
+    wrap.innerHTML='<div vw-access-button class="active"></div><div vw-plugin-wrapper><div class="vw-plugin-top-wrapper"></div></div>';
+    document.body.appendChild(wrap);
+    var s=document.createElement('script'); s.src='https://vlibras.gov.br/app/vlibras-plugin.js';
+    s.onload=function(){ try{ new window.VLibras.Widget('https://vlibras.gov.br/app'); }catch(e){} };
+    s.onerror=function(){ toast('Não foi possível carregar o VLibras neste ambiente de prévia (funciona normalmente no app publicado no Render).','inf'); };
+    document.body.appendChild(s);
+  }
+  function pageText(){ var m=document.querySelector('main.page')||document.querySelector('.lc')||document.body; return m.innerText.replace(/\s+/g,' ').trim(); }
+  function setReadBtnState(btn,on){ if(!btn)return; btn.classList.toggle('reading',on);
+    btn.innerHTML = on ? '<i class="fa-solid fa-stop"></i> Parar leitura' : '<i class="fa-solid fa-volume-high"></i> Ler esta página em voz alta'; }
+  function toggleRead(btn){
+    if(!('speechSynthesis' in window)){ toast('Seu navegador não tem suporte à leitura em voz alta.','err'); return; }
+    if(speaking){ window.speechSynthesis.cancel(); speaking=false; setReadBtnState(btn,false); return; }
+    var text=pageText(); if(!text){ toast('Nada para ler nesta página.','inf'); return; }
+    var u=new SpeechSynthesisUtterance(text); u.lang='pt-BR'; u.rate=1;
+    u.onend=function(){ speaking=false; setReadBtnState(btn,false); };
+    u.onerror=function(){ speaking=false; setReadBtnState(btn,false); };
+    window.speechSynthesis.cancel(); window.speechSynthesis.speak(u);
+    speaking=true; setReadBtnState(btn,true);
+  }
+
+  var POS_KEY='taskai-demo-a11y-btn-pos';
+  function makeDraggable(el,onDragEnd){
+    var dragging=false,moved=false,startX=0,startY=0,origX=0,origY=0;
+    function clamp(x,y){ var w=el.offsetWidth,h=el.offsetHeight,maxX=window.innerWidth-w-6,maxY=window.innerHeight-h-6;
+      return {x:Math.max(6,Math.min(x,maxX)), y:Math.max(6,Math.min(y,maxY))}; }
+    function place(x,y){ var p=clamp(x,y); el.style.left=p.x+'px'; el.style.top=p.y+'px'; el.style.right='auto'; el.style.bottom='auto'; return p; }
+    function restore(){ try{ var s=JSON.parse(localStorage.getItem(POS_KEY)||'null'); if(s&&typeof s.x==='number') place(s.x,s.y); }catch(e){} }
+    function start(x,y){ dragging=true; moved=false; var r=el.getBoundingClientRect(); startX=x; startY=y; origX=r.left; origY=r.top;
+      el.classList.add('a11y-dragging'); document.body.classList.add('a11y-no-select'); }
+    function move(x,y){ if(!dragging) return; var dx=x-startX, dy=y-startY; if(Math.abs(dx)>4||Math.abs(dy)>4) moved=true; if(moved) place(origX+dx, origY+dy); }
+    function end(){ if(!dragging) return; dragging=false; el.classList.remove('a11y-dragging'); document.body.classList.remove('a11y-no-select');
+      if(moved){ var r=el.getBoundingClientRect(); try{ localStorage.setItem(POS_KEY, JSON.stringify({x:r.left,y:r.top})); }catch(e){} if(onDragEnd) onDragEnd(true); }
+      else if(onDragEnd) onDragEnd(false); }
+    el.addEventListener('mousedown', function(e){ start(e.clientX,e.clientY); e.preventDefault(); });
+    document.addEventListener('mousemove', function(e){ move(e.clientX,e.clientY); });
+    document.addEventListener('mouseup', end);
+    el.addEventListener('touchstart', function(e){ var t=e.touches[0]; start(t.clientX,t.clientY); }, {passive:true});
+    document.addEventListener('touchmove', function(e){ if(dragging){ var t=e.touches[0]; move(t.clientX,t.clientY); e.preventDefault(); } }, {passive:false});
+    document.addEventListener('touchend', end);
+    window.addEventListener('resize', function(){ var r=el.getBoundingClientRect(); place(r.left,r.top); });
+    restore();
+  }
+  function positionPanel(btn,panel){
+    var r=btn.getBoundingClientRect(); var pw=panel.offsetWidth||290, ph=panel.offsetHeight||420;
+    var spaceBelow=window.innerHeight-r.bottom, spaceAbove=r.top;
+    var top=(spaceBelow>ph+16||spaceBelow>spaceAbove) ? r.bottom+10 : r.top-ph-10;
+    top=Math.max(8, Math.min(top, window.innerHeight-ph-8));
+    var left=Math.max(8, Math.min(r.left, window.innerWidth-pw-8));
+    panel.style.left=left+'px'; panel.style.top=top+'px'; panel.style.right='auto'; panel.style.bottom='auto';
+  }
+
+  function buildUI(){
+    var btn=document.createElement('button'); btn.id='a11yBtn'; btn.type='button';
+    btn.setAttribute('aria-label','Abrir opções de acessibilidade'); btn.setAttribute('aria-haspopup','dialog'); btn.setAttribute('aria-expanded','false');
+    btn.title='Toque e arraste para mover · clique para abrir';
+    btn.innerHTML='<i class="fa-solid fa-universal-access" aria-hidden="true"></i>';
+    var panel=document.createElement('div'); panel.id='a11yPanel'; panel.setAttribute('role','dialog'); panel.setAttribute('aria-label','Opções de acessibilidade');
+    panel.innerHTML=
+      '<button type="button" class="a11y-close" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button>'+
+      '<h2>Acessibilidade</h2><div class="a11y-sub">Ajuste a exibição do TaskAI ao que for mais confortável para você.</div>'+
+      '<div class="a11y-row"><div><div class="a11y-label">Tamanho da fonte</div><div class="a11y-desc">Aumenta o texto de toda a página</div></div>'+
+      '<div class="a11y-fsbtns" role="group" aria-label="Tamanho da fonte">'+
+      '<button type="button" data-fs="0" aria-label="Fonte padrão">A</button><button type="button" data-fs="1" aria-label="Fonte grande">A+</button>'+
+      '<button type="button" data-fs="2" aria-label="Fonte maior">A++</button><button type="button" data-fs="3" aria-label="Fonte muito maior">A+++</button></div></div>'+
+      '<div class="a11y-row"><div><div class="a11y-label">Alto contraste</div><div class="a11y-desc">Preto e amarelo, para baixa visão</div></div>'+
+      '<button type="button" class="a11y-switch" id="a11ySwContrast" role="switch" aria-checked="false" aria-label="Ativar alto contraste"><span class="knob"></span></button></div>'+
+      '<div class="a11y-row"><div><div class="a11y-label">Sublinhar links</div><div class="a11y-desc">Facilita identificar links no texto</div></div>'+
+      '<button type="button" class="a11y-switch" id="a11ySwUnderline" role="switch" aria-checked="false" aria-label="Ativar sublinhado de links"><span class="knob"></span></button></div>'+
+      '<div class="a11y-row"><div><div class="a11y-label">Reduzir animações</div><div class="a11y-desc">Desativa transições e efeitos de movimento</div></div>'+
+      '<button type="button" class="a11y-switch" id="a11ySwMotion" role="switch" aria-checked="false" aria-label="Ativar redução de animações"><span class="knob"></span></button></div>'+
+      '<div class="a11y-row"><div><div class="a11y-label">Tradução em Libras</div><div class="a11y-desc">Widget oficial do governo (VLibras) — também soletra siglas como "IA" quando não há sinal específico</div></div>'+
+      '<button type="button" class="a11y-switch" id="a11ySwLibras" role="switch" aria-checked="false" aria-label="Ativar tradução em Libras"><span class="knob"></span></button></div>'+
+      '<button type="button" class="a11y-readbtn" id="a11yReadBtn"><i class="fa-solid fa-volume-high"></i> Ler esta página em voz alta</button>'+
+      '<button type="button" class="a11y-resetbtn" id="a11yReset">Restaurar padrão</button>';
+    document.body.appendChild(btn); document.body.appendChild(panel);
+
+    var suppressClick=false;
+    makeDraggable(btn, function(wasDrag){ if(wasDrag){ suppressClick=true; setTimeout(function(){ suppressClick=false; },60); } });
+
+    function openPanel(){ panel.classList.add('on'); btn.setAttribute('aria-expanded','true'); positionPanel(btn,panel); syncUI(); var f=panel.querySelector('.a11y-close'); if(f)f.focus(); }
+    function closePanel(){ panel.classList.remove('on'); btn.setAttribute('aria-expanded','false'); btn.focus(); }
+    btn.addEventListener('click', function(){ if(suppressClick) return; panel.classList.contains('on')?closePanel():openPanel(); });
+    window.addEventListener('resize', function(){ if(panel.classList.contains('on')) positionPanel(btn,panel); });
+    panel.querySelector('.a11y-close').addEventListener('click', closePanel);
+    document.addEventListener('keydown', function(e){ if(e.key==='Escape' && panel.classList.contains('on')) closePanel(); });
+    document.addEventListener('click', function(e){ if(panel.classList.contains('on') && !e.target.closest('#a11yPanel') && !e.target.closest('#a11yBtn')) closePanel(); });
+
+    panel.querySelectorAll('.a11y-fsbtns button').forEach(function(b){
+      b.addEventListener('click', function(){ prefs.fs=parseInt(b.dataset.fs,10); savePrefs(prefs); applyPrefs(); syncUI(); });
+    });
+    function wireSwitch(id,key){ document.getElementById(id).addEventListener('click', function(){ prefs[key]=!prefs[key]; savePrefs(prefs); applyPrefs(); syncUI(); }); }
+    wireSwitch('a11ySwContrast','contrast'); wireSwitch('a11ySwUnderline','underline'); wireSwitch('a11ySwMotion','reduceMotion'); wireSwitch('a11ySwLibras','libras');
+    document.getElementById('a11yReadBtn').addEventListener('click', function(){ toggleRead(this); });
+    document.getElementById('a11yReset').addEventListener('click', function(){
+      prefs={fs:0,contrast:false,underline:false,reduceMotion:false,libras:false}; savePrefs(prefs); applyPrefs(); syncUI();
+      if(speaking && 'speechSynthesis' in window) window.speechSynthesis.cancel();
+      speaking=false; setReadBtnState(document.getElementById('a11yReadBtn'),false);
+    });
+    function syncUI(){
+      panel.querySelectorAll('.a11y-fsbtns button').forEach(function(b){ b.classList.toggle('on', parseInt(b.dataset.fs,10)===prefs.fs); });
+      document.getElementById('a11ySwContrast').setAttribute('aria-checked', String(!!prefs.contrast));
+      document.getElementById('a11ySwUnderline').setAttribute('aria-checked', String(!!prefs.underline));
+      document.getElementById('a11ySwMotion').setAttribute('aria-checked', String(!!prefs.reduceMotion));
+      document.getElementById('a11ySwLibras').setAttribute('aria-checked', String(!!prefs.libras));
+    }
+    syncUI();
+  }
+  function initA11y(){ applyPrefs(); buildUI(); }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', initA11y); else initA11y();
+})();
+</script>
+</body>
+</html>

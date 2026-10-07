@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}TaskAI{% endblock %}</title>
+<script>
+/* aplica o tema salvo antes da primeira pintura, evita "flash" */
+(function(){
+  var t = localStorage.getItem('taskai-theme') || '{{ user.theme or "dark" }}';
+  document.documentElement.setAttribute('data-theme', t);
+})();
+</script>
+<link rel="stylesheet" href="/static/css/style.css">
+<link rel="stylesheet" href="/static/css/accessibility.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="/static/js/accessibility.js" defer></script>
+<script src="/static/js/pw-eye.js" defer></script>
+</head>
+<body>
+<a href="#mainContent" class="skip-link">Pular para o conteúdo principal</a>
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" aria-label="Menu principal">
+    <div class="slogo">
+      <div class="lb"><i class="fa-solid fa-check-double" style="color:#fff;font-size:14px" aria-hidden="true"></i></div>
+      <span>TaskAI</span>
+    </div>
+
+    <button class="bnew" onclick="goNew()" aria-label="Criar nova tarefa">
+      <i class="fa-solid fa-plus" aria-hidden="true"></i><span>Nova Tarefa</span>
+    </button>
+
+    <nav class="snav" aria-label="Navegação">
+      <a href="/dashboard" class="slink {% if active=='dashboard' %}on{% endif %}" aria-label="Dashboard" {% if active=='dashboard' %}aria-current="page"{% endif %}>
+        <i class="fa-solid fa-gauge-high" aria-hidden="true"></i><span>Dashboard</span>
+      </a>
+      <a href="/tasks" class="slink {% if active=='tasks' %}on{% endif %}" aria-label="Minhas Tarefas" {% if active=='tasks' %}aria-current="page"{% endif %}>
+        <i class="fa-solid fa-list-check" aria-hidden="true"></i><span>Minhas Tarefas</span>
+      </a>
+      <a href="/chat" class="slink {% if active=='chat' %}on{% endif %}" aria-label="Chat com IA" {% if active=='chat' %}aria-current="page"{% endif %}>
+        <i class="fa-solid fa-comments" aria-hidden="true"></i><span>Chat <abbr title="Inteligência Artificial">IA</abbr></span>
+      </a>
+      {% if user.account_type == 'corporativo' %}
+      <a href="/equipe" class="slink {% if active=='equipe' %}on{% endif %}" aria-label="Equipe" {% if active=='equipe' %}aria-current="page"{% endif %}>
+        <i class="fa-solid fa-users" aria-hidden="true"></i><span>Equipe</span>
+      </a>
+      {% endif %}
+      <a href="/planos" class="slink {% if active=='planos' %}on{% endif %}" aria-label="Planos" {% if active=='planos' %}aria-current="page"{% endif %}>
+        <i class="fa-solid fa-crown" aria-hidden="true"></i><span>Planos</span>
+      </a>
+      <a href="/settings" class="slink {% if active=='settings' %}on{% endif %}" aria-label="Configurações" {% if active=='settings' %}aria-current="page"{% endif %}>
+        <i class="fa-solid fa-gear" aria-hidden="true"></i><span>Configurações</span>
+      </a>
+    </nav>
+
+    <!-- Widget -->
+    <div class="widget">
+      <div class="wtitle">Resumo do dia</div>
+      <div class="wbody">
+        <div class="rwrap">
+          <svg class="pring" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="Percentual de tarefas concluídas hoje">
+            <circle class="rbg"   cx="32" cy="32" r="26"/>
+            <circle class="rfill" cx="32" cy="32" r="26" id="rfill"/>
+          </svg>
+          <div class="rpct" id="rpct" aria-hidden="true">0%</div>
+        </div>
+        <div class="winfo">
+          <div class="wlabel">Produtividade</div>
+          <div class="wsub" id="wsub">Carregando…</div>
+          <a href="/tasks" class="wlink">Ver detalhes →</a>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="sbox" role="search">
+        <i class="fa-solid fa-magnifying-glass si" aria-hidden="true"></i>
+        <label for="gsrch" class="sr-only">Pesquisar tarefas</label>
+        <input class="sinp" id="gsrch" placeholder="Pesquisar tarefas…"
+               autocomplete="off" onkeydown="onSKey(event)">
+        <div class="sdd" id="sdd" style="display:none"></div>
+      </div>
+      <div class="tbr">
+        <button class="thtog" onclick="toggleTheme()" aria-label="Alternar tema claro/escuro" title="Alternar tema claro/escuro">
+          <span class="thk" id="thk"><i class="fa-solid fa-moon" id="thicon" aria-hidden="true"></i></span>
+        </button>
+
+        <button class="tico" id="bellBtn" onclick="togN(event)" aria-label="Notificações" aria-haspopup="true" title="Notificações">
+          <i class="fa-solid fa-bell" aria-hidden="true"></i>
+          <span class="nbadge" id="nbadge" aria-hidden="true">0</span>
+        </button>
+        <div class="ndrop" id="ndrop" role="menu" aria-label="Notificações">
+          <div class="ndh">
+            <span class="ndt">Notificações</span>
+            <span class="ndmark" onclick="markAllRead()" role="button" tabindex="0">Marcar todas como lidas</span>
+          </div>
+          <div class="ndbody" id="ndbody" aria-live="polite">
+            <div class="ndempty"><i class="fa-regular fa-bell-slash" aria-hidden="true"></i>Sem notificações por aqui.</div>
+          </div>
+        </div>
+
+        <span class="unl" onclick="togU()">{{ user.username }}</span>
+        <button class="uav" onclick="togU()" id="topAvatar" aria-label="Menu da conta de {{ user.username }}" aria-haspopup="true" style="{% if not user.avatar_path %}background:{{ user.avatar_color }}{% endif %}">
+          {% if user.avatar_path %}<img src="/static/uploads/avatars/{{ user.avatar_path }}" alt="Foto de perfil de {{ user.username }}" data-c="{{ user.avatar_color }}" data-i="{{ user.username[0]|upper }}" onerror="var p=this.parentNode;p.style.background=this.dataset.c;p.textContent=this.dataset.i">{% else %}{{ user.username[0]|upper }}{% endif %}
+        </button>
+        <div class="udrop" id="udrop" role="menu">
+          <div class="uddh">
+            <div class="udn">{{ user.username }}</div>
+            <div class="ude">{{ user.email }}</div>
+            <div style="margin-top:8px">
+              <span class="plchip {{ 'corp' if user.account_type=='corporativo' else 'comum' }}">
+                {{ 'Corporativo' if user.account_type=='corporativo' else 'Comum' }}
+              </span>
+              {% if user.plan == 'pro' %}<span class="plchip pro">PRO</span>{% elif user.plan == 'especial' %}<span class="plchip pro">Especial</span>{% endif %}
+            </div>
+          </div>
+          <a href="/settings"><i class="fa-solid fa-gear" aria-hidden="true"></i> Configurações</a>
+          <a href="/planos"><i class="fa-solid fa-crown" aria-hidden="true"></i> Planos</a>
+          <a href="/logout" class="danger"><i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i> Sair</a>
+        </div>
+      </div>
+    </header>
+
+    <main class="page" id="mainContent">{% block content %}{% endblock %}</main>
+  </div>
+</div>
+
+<div id="toasts" aria-live="polite" aria-atomic="true"></div>
+
+<script>
+/* ─ Toast ─ */
+function toast(msg,t='inf'){
+  const c=document.getElementById('toasts');
+  const el=document.createElement('div');
+  el.className='toast t'+t;
+  const ic={ok:'circle-check',err:'circle-exclamation',inf:'circle-info'};
+  el.innerHTML=`<i class="fa-solid fa-${ic[t]||ic.inf}"></i>${msg}`;
+  c.appendChild(el);
+  setTimeout(()=>{el.style.cssText='opacity:0;transition:opacity .3s';setTimeout(()=>el.remove(),300);},3200);
+}
+
+/* ─ User dropdown ─ */
+function togU(){const d=document.getElementById('udrop');d.style.display=d.style.display==='block'?'none':'block';document.getElementById('ndrop').classList.remove('on');}
+
+/* ─ Tema claro/escuro ─ */
+function applyThemeIcon(t){
+  document.getElementById('thicon').className = t==='light' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+}
+applyThemeIcon(document.documentElement.getAttribute('data-theme')||'dark');
+async function toggleTheme(){
+  const cur=document.documentElement.getAttribute('data-theme')||'dark';
+  const next=cur==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',next);
+  localStorage.setItem('taskai-theme',next);
+  applyThemeIcon(next);
+  try{ await api('PUT','/api/user/theme',{theme:next}); }catch(e){}
+}
+
+/* ─ Notificações ─ */
+let lastUnread=0;
+function icForType(t){return {task_created:'plus',task_updated:'pen',task_status:'arrows-rotate',task_deleted:'trash'}[t]||'bell';}
+function timeAgo(iso){
+  const d=new Date(iso+'Z'); const diff=Math.floor((Date.now()-d.getTime())/1000);
+  if(diff<60)return 'agora mesmo';
+  if(diff<3600)return Math.floor(diff/60)+' min atrás';
+  if(diff<86400)return Math.floor(diff/3600)+'h atrás';
+  return Math.floor(diff/86400)+'d atrás';
+}
+async function loadNotifications(ring){
+  try{
+    const r=await fetch('/api/notifications');const d=await r.json();
+    const badge=document.getElementById('nbadge');
+    badge.textContent=d.unread>99?'99+':d.unread;
+    badge.classList.toggle('on',d.unread>0);
+    if(ring && d.unread>lastUnread){
+      const bell=document.getElementById('bellBtn');
+      bell.classList.remove('ring');void bell.offsetWidth;bell.classList.add('ring');
+    }
+    lastUnread=d.unread;
+    const body=document.getElementById('ndbody');
+    if(!d.notifications.length){
+      body.innerHTML='<div class="ndempty"><i class="fa-regular fa-bell-slash"></i>Sem notificações por aqui.</div>';
+      return;
+    }
+    body.innerHTML=d.notifications.map(n=>`
+      <div class="ndi ${n.read?'':'unread'}">
+        <div class="ndic"><i class="fa-solid fa-${icForType(n.type)}"></i></div>
+        <div class="ndtxt">
+          <div class="ndtt">${X(n.title)}</div>
+          <div class="ndms">${X(n.message)}</div>
+          <div class="ndtm">${timeAgo(n.created_at)}</div>
+        </div>
+      </div>`).join('');
+  }catch(e){}
+}
+function togN(e){
+  e.stopPropagation();
+  const d=document.getElementById('ndrop');
+  const willOpen=!d.classList.contains('on');
+  d.classList.toggle('on');
+  document.getElementById('udrop').style.display='none';
+  if(willOpen)loadNotifications(false);
+}
+async function markAllRead(){
+  await api('POST','/api/notifications/read',{});
+  loadNotifications(false);
+}
+loadNotifications(true);
+setInterval(()=>loadNotifications(true), 20000);
+
+/* ─ Search ─ */
+function onSKey(e){if(e.key==='Enter'){const q=document.getElementById('gsrch').value.trim();if(q)window.location.href='/tasks?search='+encodeURIComponent(q);}}
+let _st;
+document.getElementById('gsrch').addEventListener('input',function(){
+  clearTimeout(_st);
+  const q=this.value.trim(); const dd=document.getElementById('sdd');
+  if(q.length<2){dd.style.display='none';return;}
+  _st=setTimeout(async()=>{
+    const r=await fetch('/api/tasks/search?q='+encodeURIComponent(q));
+    const d=await r.json();
+    if(!d.tasks.length){dd.innerHTML='<div class="sde">Nenhuma tarefa encontrada</div>';}
+    else{dd.innerHTML=d.tasks.map(t=>`<div class="sddi" onclick="window.location.href='/tasks?search=${encodeURIComponent(t.name)}'"><i class="fa-solid fa-list-check"></i><div><div class="sdn">${X(t.name)}</div><div class="sdm">${pL(t.priority)} · ${sL(t.status)}</div></div></div>`).join('');}
+    dd.style.display='block';
+  },280);
+});
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.sbox'))document.getElementById('sdd').style.display='none';
+  if(!e.target.closest('.tbr'))document.getElementById('udrop').style.display='none';
+  if(!e.target.closest('.tbr'))document.getElementById('ndrop').classList.remove('on');
+});
+
+/* ─ Nova Tarefa ─ */
+function goNew(){
+  if(window.location.pathname==='/dashboard'){const f=document.getElementById('tName');if(f){f.focus();f.scrollIntoView({behavior:'smooth'});}}
+  else window.location.href='/dashboard?focus=1';
+}
+
+/* ─ Widget ─ */
+async function loadWidget(){
+  try{
+    const r=await fetch('/api/tasks');const d=await r.json();const s=d.stats;
+    const pct=s.total?Math.round((s.concluido/s.total)*100):0;
+    document.getElementById('rpct').textContent=pct+'%';
+    document.getElementById('wsub').textContent=`${s.concluido} de ${s.total} tarefas`;
+    const c=2*Math.PI*26;const f=document.getElementById('rfill');
+    f.style.strokeDasharray=c;f.style.strokeDashoffset=c-(pct/100)*c;
+  }catch{document.getElementById('wsub').textContent='—';}
+}
+loadWidget();
+
+/* ─ Helpers ─ */
+function X(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+function pL(p){return{alta:'Alta',media:'Média',baixa:'Baixa'}[p]||p;}
+function sL(s){return{pendente:'Pendente',em_andamento:'Em andamento',concluido:'Concluído'}[s]||s;}
+function fD(s){if(!s)return'—';const[y,m,d]=s.split('-');return`${d}/${m}/${y}`;}
+async function api(method,url,body){
+  const r=await fetch(url,{method,headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});
+  return r.json();
+}
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>
